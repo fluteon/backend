@@ -1,4 +1,4 @@
-import { Route, Routes, useLocation } from 'react-router-dom';
+import { Route, Routes, Navigate } from 'react-router-dom';
 import './App.css';
 // import Navigation from './customer/Components/Navbar/Navigation';
 // import CustomerRoutes from './Routers/CustomerRoutes';
@@ -22,6 +22,7 @@ function App() {
       {/* <ContactSidebar /> */}
       <Routes>
         {/* <Route path="/*" element={<CustomerRoutes />} /> */}
+        <Route path="/" element={<Navigate to="/admin" replace />} />
         <Route path="/admin/*" element={<AdminPannel />} />
         
       </Routes>
