@@ -20,8 +20,6 @@ import Dashboard from "./Views/Admin";
 import { Route, Routes, useNavigate } from "react-router-dom";
 import DemoAdmin from "./Views/DemoAdmin";
 import CreateProductForm from "./componets/createProduct/CreateProductFrom";
-// import CreateProuductDemo from "./componets/createProduct/CreateProuductDemo";
-// import CreateProduct from "../customer/Components/Create/CreateProduct";
 import "./AdminPannel.css";
 import ProductsTable from "./componets/Products/ProductsTable";
 import OrdersTable from "./componets/Orders/OrdersTable";
@@ -35,15 +33,13 @@ import { deepPurple } from "@mui/material/colors";
 const drawerWidth = 240;
 
 const menu = [
-  {name:"Dashboard",path:"/admin"},
-  {name:"Products",path:"/admin/products"},
-  {name:"Customers",path:"/admin/customers"},
-  {name:"Orders",path:"/admin/orders"},
-  {name:"Total Earnings",path:"/admin"},
-  {name:"Weekly Overview",path:"/admin"},
-  {name:"Monthly Overview",path:"/admin"},
-  {name:"Add Product",path:"/admin/product/create"},
+  { name: "Dashboard", path: "/" },
+  { name: "Products", path: "/products" },
+  { name: "Customers", path: "/customers" },
+  { name: "Orders", path: "/orders" },
+  { name: "Add Product", path: "/product/create" },
 ];
+
 
 export default function AdminPannel() {
   const theme = useTheme();
@@ -159,16 +155,17 @@ export default function AdminPannel() {
         </Drawer>
         <Box className="adminContainer" component="main" sx={{ flexGrow: 1 }}>
           <Toolbar />
-          <Routes>
-            <Route path="/" element={ <Dashboard />}></Route>
-            <Route path="/product/create" element={<CreateProductForm/>}></Route>
-            <Route path="/product/update/:productId" element={<UpdateProductForm/>}></Route>
-            <Route path="/products" element={<ProductsTable/>}></Route>
-            <Route path="/orders" element={<OrdersTable/>}></Route>
-            <Route path="/customers" element={<Customers/>}></Route>
-            <Route path="/demo" element={<DemoAdmin />}></Route>
-          </Routes>
-         
+<Routes>
+  <Route path="/" element={<Dashboard />} />
+  <Route path="product/create" element={<CreateProductForm />} />
+  <Route path="product/update/:productId" element={<UpdateProductForm />} />
+  <Route path="products" element={<ProductsTable />} />
+  <Route path="orders" element={<OrdersTable />} />
+  <Route path="customers" element={<Customers />} />
+  <Route path="demo" element={<DemoAdmin />} />
+</Routes>
+
+
         </Box>
       </Box>
     </ThemeProvider>
