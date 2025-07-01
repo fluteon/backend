@@ -103,7 +103,7 @@ export default function AdminPannel() {
 >
   {(auth?.user?.firstName?.[0] || "A").toUpperCase()}
 </Avatar>
-              <ListItemText className="ml-5" primary={"Logout"} />
+              {/* <ListItemText className="ml-5" primary={"Logout"} /> */}
             </ListItemButton>
           </ListItem>
         
