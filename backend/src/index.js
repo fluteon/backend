@@ -43,7 +43,9 @@ app.use("/api/ratings",ratingRouter);
 
 
 // for search 
+const userQueryRoute=require("./routes/userQueryRoute.js");
 
+app.use("/api/user",userQueryRoute);
 
 // admin routes handler
 const adminOrderRoutes=require("./routes/adminOrder.routes.js");

@@ -2,53 +2,6 @@ const cloudinary = require("../config/cloudinary"); // ✅ correct
 const Category = require("../models/category.model");
 const Product = require("../models/product.model");
 
-// Create a new product
-// async function createProduct(req) {
-
-//   try {
-//     // Safely log
-//     const reqData = req.body;
-//     console.log("data",reqData)
-//     if (!reqData.size) throw new Error("Missing 'size' field in form data");
-//     let sizes = reqData.size;
-//     if (typeof sizes === "string") {
-//       sizes = JSON.parse(sizes);
-//     }
-//     // Handle categories
-//     let topLevel = await Category.findOne({ name: reqData.topLavelCategory }) || await new Category({ name: reqData.topLavelCategory, level: 1 }).save();
-//     let secondLevel = await Category.findOne({ name: reqData.secondLavelCategory, parentCategory: topLevel._id }) || await new Category({ name: reqData.secondLavelCategory, parentCategory: topLevel._id, level: 2 }).save();
-//     let thirdLevel = await Category.findOne({ name: reqData.thirdLavelCategory, parentCategory: secondLevel._id }) || await new Category({ name: reqData.thirdLavelCategory, parentCategory: secondLevel._id, level: 3 }).save();
-
-//     // Handle images
-//     if (!req.files || req.files.length === 0) throw new Error("No images uploaded");
-//   //  const imagePaths = req.files?.images?.map(file => file.path) || [];
-// const imagePaths = req.uploadedImageUrls || []; // ✅ accurate URLs
-
-
-//     const product = new Product({
-//       title: reqData.title,
-//       color: reqData.color,
-//       description: reqData.description,
-//       discountedPrice: reqData.discountedPrice,
-//       discountPersent: reqData.discountPersent,
-//       images: imagePaths,
-//       brand: reqData.brand,
-//       price: reqData.price,
-//       sizes: sizes,
-//       quantity: reqData.quantity,
-//       category: thirdLevel._id,
-//     });
-//     return await product.save();
-//   } catch (error) {
-//     throw new Error(error.message || "Something went wrong");
-//   }
-// }
-
-
-
-// console.log("cloudinary object", cloudinary); 
-// console.log("cloudinary uploader available?", !!cloudinary.uploader);
-
 
 async function createProduct(req) {
   try {

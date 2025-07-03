@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { Typography } from "@mui/material";
 import {
   Grid,
@@ -11,21 +11,50 @@ import {
   Box,
 } from "@mui/material";
 
-import { Fragment } from "react";
 import "./CreateProductForm.css";
 import { useDispatch } from "react-redux";
 import { createProduct } from "../../../Redux/Customers/Product/Action";
-
-const initialSizes = [
-  { name: "S", quantity: 0 },
-  { name: "M", quantity: 0 },
-  { name: "L", quantity: 0 },
-];
+import api, { API_BASE_URL } from "../../../config/api";
+const categoryHierarchy = {
+  women: {
+    bottom_wear: [
+      { value: "formal_pants", label: "Formal Pants" },
+      { value: "cotton_pants", label: "Cotton Pants" },
+      { value: "linen_pants", label: "Linen Pants" },
+      { value: "cargos", label: "Cargo" },
+      { value: "track_pants", label: "Track Pants" },
+      { value: "jeans", label: "Jeans" },
+    ],
+    shirts: [
+      { value: "formal_shirts", label: "Formal Shirts" },
+      { value: "satin_shirts", label: "Satin Shirts" },
+      { value: "hidden_button_shirts", label: "Hidden Button Shirts" },
+    ],
+    tops: [
+      { value: "tanic_tops", label: "Tanic Top" },
+      { value: "tank_tops", label: "Tank Top" },
+      { value: "peplum_tops", label: "Peplum Top" },
+      { value: "crop_tops", label: "Crop Tops" },
+    ],
+    kurtis: [
+      { value: "office_wear_kurtis", label: "Office Wear" },
+      { value: "a_line_kurtis", label: "A-Line Kurtis" },
+      { value: "kalamkari", label: "Kalamkari Kurti" },
+    ],
+  },
+  kids: {
+    bottom_wear: [],
+    tops: [],
+    kurtis: [],
+  },
+};
 
 const CreateProductForm = () => {
-  const [images, setImages] = useState([]);
-const [previewImages, setPreviewImages] = useState([]);
   
+  const [sizeChart, setSizeChart] = useState(null);
+  const [images, setImages] = useState([]);
+  const [previewImages, setPreviewImages] = useState([]);
+
   const [productData, setProductData] = useState({
     images: "",
     brand: "",
@@ -34,23 +63,25 @@ const [previewImages, setPreviewImages] = useState([]);
     discountedPrice: "",
     price: "",
     discountPersent: "",
-    size: initialSizes,
+    size: [],
     quantity: "",
     topLavelCategory: "",
     secondLavelCategory: "",
     thirdLavelCategory: "",
     description: "",
   });
-const dispatch=useDispatch();
-const jwt=localStorage.getItem("jwt")
 
-const handleImageUpload = (e) => {
-  const files = Array.from(e.target.files).slice(0, 4); // only first 4 files
-  setImages(files);
+  const dispatch = useDispatch();
+  const jwt = localStorage.getItem("jwt");
 
-  const previews = files.map((file) => URL.createObjectURL(file));
-  setPreviewImages(previews);
-};
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files).slice(0, 4);
+    setImages(files);
+
+    const previews = files.map((file) => URL.createObjectURL(file));
+    setPreviewImages(previews);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProductData((prevState) => ({
@@ -61,7 +92,7 @@ const handleImageUpload = (e) => {
 
   const handleSizeChange = (e, index) => {
     let { name, value } = e.target;
-    name==="size_quantity"?name="quantity":name=e.target.name;
+    name = name === "size_quantity" ? "quantity" : name;
 
     const sizes = [...productData.size];
     sizes[index][name] = value;
@@ -80,40 +111,71 @@ const handleImageUpload = (e) => {
     }));
   };
 
-  // const handleSubmit = (e) => {
-  //   e.preventDefault();
-  //   dispatch(createProduct({data:productData,jwt}))
-  //   console.log(productData);
-  // };
-
   const handleSubmit = (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const formData = new FormData();
+    const formData = new FormData();
 
-  // Append product fields
-  for (let key in productData) {
-    if (key === "size") {
-      formData.append("size", JSON.stringify(productData.size));
-    } else {
-      formData.append(key, productData[key]);
+    for (let key in productData) {
+      if (key === "size") {
+        formData.append("size", JSON.stringify(productData.size));
+      } else {
+        formData.append(key, productData[key]);
+      }
     }
+
+    images.forEach((image) => {
+      formData.append("images", image);
+    });
+
+    dispatch(createProduct({ data: formData, jwt }));
+  };
+
+useEffect(() => {
+  if (productData.thirdLavelCategory) {
+   fetch(`${API_BASE_URL}/api/admin/products/${productData.thirdLavelCategory}`)
+
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Size chart response:", data);
+        const formattedSizes = data.sizes.map((sizeObj) => ({
+          name: sizeObj.label,
+          quantity: 0,
+        }));
+        setSizeChart(data);
+        setProductData((prevState) => ({
+          ...prevState,
+          size: formattedSizes,
+        }));
+      })
+      .catch(() => {
+        setSizeChart(null);
+        setProductData((prevState) => ({
+          ...prevState,
+          size: [],
+        }));
+      });
   }
+}, [productData.thirdLavelCategory]);
 
-  // Append images
-  images.forEach((image) => {
-    formData.append("images", image);
-  });
+  const secondLevelOptions = productData.topLavelCategory
+    ? Object.keys(categoryHierarchy[productData.topLavelCategory])
+    : [];
 
-  dispatch(createProduct({ data: formData, jwt }));
-};
+  const thirdLevelOptions = productData.topLavelCategory &&
+    productData.secondLavelCategory &&
+    categoryHierarchy[productData.topLavelCategory][productData.secondLavelCategory]
+      ? categoryHierarchy[productData.topLavelCategory][productData.secondLavelCategory]
+      : [];
+
+
 
   return (
-    <Fragment className="createProductContainer ">
+    <Fragment className="createProductContainer">
       <Typography
         variant="h3"
         sx={{ textAlign: "center" }}
-        className="py-10 text-center "
+        className="py-10 text-center"
       >
         Add New Product
       </Typography>
@@ -122,20 +184,27 @@ const handleImageUpload = (e) => {
         className="createProductContainer min-h-screen"
       >
         <Grid container spacing={2}>
-<Grid item xs={12}>
-  <input
-    type="file"
-    accept="image/*"
-    name="images"
-    multiple
-    onChange={(e) => handleImageUpload(e)}
-  />
-  <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
-    {previewImages.map((img, index) => (
-      <img key={index} src={img} alt="preview" width="100" height="100" style={{ objectFit: 'cover', borderRadius: 4 }} />
-    ))}
-  </Box>
-</Grid>
+          <Grid item xs={12}>
+            <input
+              type="file"
+              accept="image/*"
+              name="images"
+              multiple
+              onChange={(e) => handleImageUpload(e)}
+            />
+            <Box sx={{ display: "flex", gap: 2, mt: 2, flexWrap: "wrap" }}>
+              {previewImages.map((img, index) => (
+                <img
+                  key={index}
+                  src={img}
+                  alt="preview"
+                  width="100"
+                  height="100"
+                  style={{ objectFit: "cover", borderRadius: 4 }}
+                />
+              ))}
+            </Box>
+          </Grid>
 
           <Grid item xs={12} sm={6}>
             <TextField
@@ -146,7 +215,7 @@ const handleImageUpload = (e) => {
               onChange={handleChange}
             />
           </Grid>
-        
+
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
@@ -156,6 +225,7 @@ const handleImageUpload = (e) => {
               onChange={handleChange}
             />
           </Grid>
+
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
@@ -165,6 +235,7 @@ const handleImageUpload = (e) => {
               onChange={handleChange}
             />
           </Grid>
+
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
@@ -175,6 +246,7 @@ const handleImageUpload = (e) => {
               type="number"
             />
           </Grid>
+
           <Grid item xs={12} sm={4}>
             <TextField
               fullWidth
@@ -185,6 +257,7 @@ const handleImageUpload = (e) => {
               type="number"
             />
           </Grid>
+
           <Grid item xs={12} sm={4}>
             <TextField
               fullWidth
@@ -195,7 +268,7 @@ const handleImageUpload = (e) => {
               type="number"
             />
           </Grid>
-          
+
           <Grid item xs={12} sm={4}>
             <TextField
               fullWidth
@@ -206,69 +279,74 @@ const handleImageUpload = (e) => {
               type="number"
             />
           </Grid>
+
           <Grid item xs={6} sm={4}>
-            <FormControl fullWidth>
-              <InputLabel>Top Level Category</InputLabel>
-              <Select
-                name="topLavelCategory"
-                value={productData.topLavelCategory}
-                onChange={handleChange}
-                label="Top Level Category"
-              >
-                <MenuItem value="men">Men</MenuItem>
-                <MenuItem value="women">Women</MenuItem>
-                <MenuItem value="kids">Kids</MenuItem>
-              </Select>
-            </FormControl>
+      <FormControl fullWidth>
+        <InputLabel>Top Level Category</InputLabel>
+        <Select
+          name="topLavelCategory"
+          value={productData.topLavelCategory}
+          onChange={(e) => {
+            handleChange(e);
+            setProductData((prev) => ({
+              ...prev,
+              secondLavelCategory: "",
+              thirdLavelCategory: "",
+            }));
+          }}
+        >
+          {Object.keys(categoryHierarchy).map((topKey) => (
+            <MenuItem key={topKey} value={topKey}>
+              {topKey.toUpperCase()}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
           </Grid>
+
           <Grid item xs={6} sm={4}>
-            <FormControl fullWidth>
-              <InputLabel>Second Level Category</InputLabel>
-              <Select
-                name="secondLavelCategory"
-                value={productData.secondLavelCategory}
-                onChange={handleChange}
-                label="Second Level Category"
-              >
-                <MenuItem value="bottom_wear">Bottom Wear</MenuItem>
-                <MenuItem value="shirts">Shirts</MenuItem>
-                <MenuItem value="tops">Tops</MenuItem>
-                <MenuItem value="kurtis">Kurtis</MenuItem>
-              </Select>
-            </FormControl>
+      <FormControl fullWidth disabled={!productData.topLavelCategory}>
+        <InputLabel>Second Level Category</InputLabel>
+        <Select
+          name="secondLavelCategory"
+          value={productData.secondLavelCategory}
+          onChange={(e) => {
+            handleChange(e);
+            setProductData((prev) => ({
+              ...prev,
+              thirdLavelCategory: "",
+            }));
+          }}
+        >
+          {secondLevelOptions.map((secondKey) => (
+            <MenuItem key={secondKey} value={secondKey}>
+              {secondKey.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
           </Grid>
+
           <Grid item xs={6} sm={4}>
-            <FormControl fullWidth>
-              <InputLabel>Third Level Category</InputLabel>
-              <Select
-                name="thirdLavelCategory"
-                value={productData.thirdLavelCategory}
-                onChange={handleChange}
-                label="Third Level Category"
-              >
-                <MenuItem value="formal_pants">Formal Pants</MenuItem>
-                <MenuItem value="cotton_pants">Cotton Pants</MenuItem>
-                <MenuItem value="linen_pants">Linen Pants</MenuItem>
-                <MenuItem value="cargos">Cargo</MenuItem>
-                <MenuItem value="track_pants">Track Pants</MenuItem>
-                <MenuItem value="jeans">Jeans</MenuItem>
-                <MenuItem value="formal_shirts">Formal Shirts</MenuItem>
-                <MenuItem value="satin_shirts">Satin Shirts</MenuItem>
-                <MenuItem value="hidden_button_shirts">Hidden Button Shirts</MenuItem>
-                <MenuItem value="tanic_tops">Tanic Top</MenuItem>
-                <MenuItem value="tank_tops">Tank Top</MenuItem>
-                <MenuItem value="peplum_tops">Peplum Top</MenuItem>
-                <MenuItem value="crop_tops">Crop Tops</MenuItem>
-                <MenuItem value="office_wear_kurtis">Office Wear</MenuItem>
-                <MenuItem value="a_line_kurtis">A-Line-Kurtis</MenuItem>
-                <MenuItem value="kalamkari">Kalamkari Kurti</MenuItem>
-              </Select>
-            </FormControl>
+      <FormControl fullWidth disabled={!productData.secondLavelCategory}>
+        <InputLabel>Third Level Category</InputLabel>
+        <Select
+          name="thirdLavelCategory"
+          value={productData.thirdLavelCategory}
+          onChange={handleChange}
+        >
+          {thirdLevelOptions.map((option) => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.label}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
           </Grid>
+
           <Grid item xs={12}>
             <TextField
               fullWidth
-              id="outlined-multiline-static"
               label="Description"
               multiline
               name="description"
@@ -277,8 +355,9 @@ const handleImageUpload = (e) => {
               value={productData.description}
             />
           </Grid>
+
           {productData.size.map((size, index) => (
-            <Grid container item spacing={3} >
+            <Grid container item spacing={3} key={index}>
               <Grid item xs={12} sm={6}>
                 <TextField
                   label="Size Name"
@@ -294,14 +373,44 @@ const handleImageUpload = (e) => {
                   label="Quantity"
                   name="size_quantity"
                   type="number"
+                  value={size.quantity}
                   onChange={(event) => handleSizeChange(event, index)}
                   required
                   fullWidth
                 />
-              </Grid> </Grid>
-            
+              </Grid>
+            </Grid>
           ))}
-          <Grid item xs={12} >
+
+          {sizeChart && (
+            <Box mt={2}>
+              <Typography variant="h6">Size Chart</Typography>
+              <table className="sizeChartTable">
+                <thead>
+                  <tr>
+                    <th>Size</th>
+                    <th>Bust</th>
+                    <th>Waist</th>
+                    <th>Hips</th>
+                    <th>Length</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sizeChart.sizes.map((s) => (
+                    <tr key={s.label}>
+                      <td>{s.label}</td>
+                      <td>{s.bust || "-"}</td>
+                      <td>{s.waist || "-"}</td>
+                      <td>{s.hips || "-"}</td>
+                      <td>{s.length || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Box>
+          )}
+
+          <Grid item xs={12}>
             <Button
               variant="contained"
               sx={{ p: 1.8 }}
