@@ -19,6 +19,10 @@ const orderSchema = new Schema({
   deliveryDate: {
     type: Date,
   },
+    statusUpdatedAt: {
+    type: Date,
+    default: Date.now,
+  },
   shippingAddress: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'addresses',

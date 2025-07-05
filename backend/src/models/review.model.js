@@ -6,6 +6,14 @@ const reviewSchema = new Schema({
     type: String,
     required: true,
   },
+  description: {
+    type: String, // ✅ Add this to capture full message
+  },
+  rating: {
+    type: Number, // ✅ Add this if you want to store rating along with review
+    min: 1,
+    max: 5,
+  },
   product: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'products',

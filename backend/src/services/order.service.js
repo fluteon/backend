@@ -55,10 +55,28 @@ async function createOrder(user, shippAddress) {
   return savedOrder;
 }
 
+// async function placedOrder(orderId) {
+//   const order = await findOrderById(orderId);
+//   order.orderStatus = "PLACED";
+//   order.paymentDetails.status = "COMPLETED";
+//   order.statusUpdatedAt = new Date();
+//   const updatedOrder = await order.save();
+
+//   // Send confirmation email after successful order placement and payment
+//   if (updatedOrder?.user?.email) {
+//     await sendOrderConfirmationEmail(updatedOrder.user.email, updatedOrder);
+//   }
+
+//   return updatedOrder;
+// }
+
 async function placedOrder(orderId) {
   const order = await findOrderById(orderId);
-  order.orderStatus = "PLACED";
+  
+  // Do NOT update orderStatus here. Let it remain "PENDING"
   order.paymentDetails.status = "COMPLETED";
+  order.statusUpdatedAt = new Date();
+  
   const updatedOrder = await order.save();
 
   // Send confirmation email after successful order placement and payment
@@ -69,27 +87,32 @@ async function placedOrder(orderId) {
   return updatedOrder;
 }
 
+
 async function confirmedOrder(orderId) {
   const order = await findOrderById(orderId);
   order.orderStatus = "CONFIRMED";
+    order.statusUpdatedAt = new Date();
   return await order.save();
 }
 
 async function shipOrder(orderId) {
   const order = await findOrderById(orderId);
   order.orderStatus = "SHIPPED";
+  order.statusUpdatedAt = new Date();
   return await order.save();
 }
 
 async function deliveredOrder(orderId) {
   const order = await findOrderById(orderId);
   order.orderStatus = "DELIVERED";
+  order.statusUpdatedAt = new Date();
   return await order.save();
 }
 
 async function cancelledOrder(orderId) {
   const order = await findOrderById(orderId);
   order.orderStatus = "CANCELLED";
+  order.statusUpdatedAt = new Date();
   return await order.save();
 }
 
@@ -120,25 +143,40 @@ async function findOrderById(orderId) {
   }
 }
 
-async function usersOrderHistory(userId) {
-  try {
-    const orders = await Order.find({
-      user: userId,
-      orderStatus: "PLACED",
-    })
-      .populate({
+// async function usersOrderHistory(userId) {
+//   try {
+//     const orders = await Order.find({
+//       user: userId,
+//       orderStatus: "PLACED",
+//     })
+//       .populate({
+//         path: "orderItems",
+//         populate: {
+//           path: "product",
+//         },
+//       })
+//       .lean();
+
+//     return orders;
+//   } catch (error) {
+//     throw new Error(error.message);
+//   }
+// }
+
+const usersOrderHistory = async (userId) => {
+  const orders = await Order.find({ user: userId }) // <-- No orderStatus filter
+        .populate({
         path: "orderItems",
         populate: {
           path: "product",
         },
       })
-      .lean();
+    .sort({ createdAt: -1 })
+    .lean();
 
-    return orders;
-  } catch (error) {
-    throw new Error(error.message);
-  }
-}
+  return orders;
+};
+
 
 async function getAllOrders() {
   return await Order.find()

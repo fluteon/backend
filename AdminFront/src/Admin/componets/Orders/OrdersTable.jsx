@@ -425,11 +425,12 @@ console.log("Payment History:", history);
             >
               <MenuItem
                 onClick={() => handleConfirmedOrder(item._id, index)}
-                disabled={
-                  item.orderStatus === "DELEVERED" ||
-                  item.orderStatus === "SHIPPED" ||
-                  item.orderStatus === "CONFIRMED"
-                }
+disabled={
+  item.orderStatus.toUpperCase() === "DELIVERED" ||
+  item.orderStatus.toUpperCase() === "SHIPPED" ||
+  item.orderStatus.toUpperCase() === "CONFIRMED"
+}
+
               >
                 CONFIRMED ORDER
               </MenuItem>
@@ -442,7 +443,7 @@ console.log("Payment History:", history);
               >
                 SHIPPED ORDER
               </MenuItem>
-              <MenuItem onClick={() => handleDeliveredOrder(item._id)}>
+              <MenuItem onClick={() => handleDeliveredOrder(item._id,index)}>
                 DELIVERED ORDER
               </MenuItem>
             </Menu>
