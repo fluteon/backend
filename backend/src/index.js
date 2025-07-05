@@ -40,15 +40,18 @@ app.use("/api/reviews",reviewRouter);
 const ratingRouter=require("./routes/rating.routes.js");
 app.use("/api/ratings",ratingRouter);
 
-
-
-// for search 
 const userQueryRoute=require("./routes/userQueryRoute.js");
 
 app.use("/api/user",userQueryRoute);
 
+// for search 
+
+
 // admin routes handler
 const adminOrderRoutes=require("./routes/adminOrder.routes.js");
 app.use("/api/admin/orders",adminOrderRoutes);
+
+const couponRoutes = require("../src/routes/coupon.routes.js")
+app.use("/api/coupons", couponRoutes);
 
 module.exports={app};

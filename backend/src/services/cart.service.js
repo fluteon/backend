@@ -38,6 +38,8 @@ async function createCart(user) {
 //   // const updatedCart = await cart.save();
 //   return cart;
 // }
+
+
 async function findUserCart(userId) {
   let cart = await Cart.findOne({ user: userId });
 
