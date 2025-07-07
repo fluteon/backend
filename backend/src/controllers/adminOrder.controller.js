@@ -29,6 +29,15 @@ const shippOrder = (req, res) => {
     return res.status(500).json({ error: "Something went wrong" });
   }
 };
+const outForDelivery = async (req, res) => {
+  try {
+    const orderId = req.params.orderId;
+    const order = await orderService.outForDelivery(orderId);
+    return res.status(202).send(order);
+  } catch (error) {
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+};
 
 const deliverOrder = (req, res) => {
   try {
@@ -62,8 +71,6 @@ const deleteOrder = (req, res) => {
   }
 };
 
-
-
 module.exports = {
   getAllOrders,
   confirmedOrder,
@@ -71,4 +78,5 @@ module.exports = {
   deliverOrder,
   cancelledOrder,
   deleteOrder,
+  outForDelivery
 };

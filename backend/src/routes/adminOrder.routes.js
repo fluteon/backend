@@ -9,5 +9,6 @@ router.put("/:orderId/ship",adminOrderController.shippOrder);
 router.put("/:orderId/deliver",adminOrderController.deliverOrder);
 router.put("/:orderId/cancel",adminOrderController.cancelledOrder);
 router.delete("/:orderId/delete",adminOrderController.deleteOrder);
+router.put("/:orderId/out-for-delivery",adminOrderController.outForDelivery);
 
 module.exports=router;

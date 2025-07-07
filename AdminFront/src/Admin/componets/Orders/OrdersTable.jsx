@@ -32,7 +32,7 @@ import {
   deliveredOrder,
   getOrders,
   shipOrder,
-
+outForDeliveryOrder
 } from "../../../Redux/Admin/Orders/Action";
 
 import {  getPaymentHistory}  from "../../../Redux/Customers/Payment/Action"
@@ -94,6 +94,13 @@ const handleCloseModal = () => setSelectedOrder(null);
     dispatch(shipOrder(orderId))
     setOrderStatus("ShIPPED")
   };
+const handleOutForDeliveryOrder = (orderId, index) => {
+  handleUpdateStatusMenuClose(index);
+  dispatch(outForDeliveryOrder(orderId));
+  setOrderStatus("OUTFORDELIVERY");
+};
+
+
   const handleDeliveredOrder = (orderId,index) => {
     handleUpdateStatusMenuClose(index);
     dispatch(deliveredOrder(orderId))
@@ -103,15 +110,7 @@ const handleCloseModal = () => setSelectedOrder(null);
     handleUpdateStatusMenuClose();
     dispatch(deleteOrder(orderId));
   };
-
-  //   useEffect(()=>{
-  // setUpdateOrderStatus(item.orderStatus==="PENDING"?"PENDING": item.orderStatus==="PLACED"?"CONFIRMED":item.orderStatus==="CONFIRMED"?"SHIPPED":"DELEVERED")
-  //   },[adminsOrder.orders])
-// const paidOrders = adminsOrder?.orders?.filter(
-//   (order) => order.paymentDetails?.paymentStatus === "COMPLETED"
-// );
 const paidOrders = adminsOrder?.orders || [];
-
 
 useEffect(() => {
   if (selectedOrder || showPaymentModal) {
@@ -280,6 +279,8 @@ console.log("Payment History:", history);
                 <MenuItem value={"CONFIRMED"}>CONFIRMED</MenuItem>
                 <MenuItem value={"DELIVERED"}>DELIVERED</MenuItem>
                 <MenuItem value={"CANCELD"}>CANCLED</MenuItem>
+                <MenuItem value={"OUT FOR DELIVERY"}>OUT FOR DELIVERY</MenuItem>
+
               </Select>
             </FormControl>
           </Grid>
@@ -385,69 +386,97 @@ console.log("Payment History:", history);
             </Button>
           </TableCell>
 
-          {/* Status Chip */}
-          <TableCell className="text-white">
-            <Chip
-              sx={{
-                color: "white !important",
-                fontWeight: "bold",
-                textAlign: "center",
-              }}
-              label={item.orderStatus}
-              size="small"
-              color={
-                item.orderStatus === "PENDING"
-                  ? "info"
-                  : item.orderStatus === "DELIVERED"
-                  ? "success"
-                  : "secondary"
-              }
-            />
-          </TableCell>
+{/* Status Chip */}
+<TableCell className="text-white">
+  <Chip
+    sx={{
+      color: "white !important",
+      fontWeight: "bold",
+      textAlign: "center",
+    }}
+    label={item.orderStatus}
+    size="small"
+    color={
+      item.orderStatus === "PENDING"
+        ? "info"
+        : item.orderStatus === "CONFIRMED"
+        ? "warning"
+        : item.orderStatus === "SHIPPED"
+        ? "primary"
+        : item.orderStatus === "OUTFORDELIVERY"
+        ? "secondary"
+        : item.orderStatus === "DELIVERED"
+        ? "success"
+        : item.orderStatus === "CANCELLED"
+        ? "error"
+        : "default"
+    }
+  />
+</TableCell>
 
-          {/* Status Update Menu */}
-          <TableCell sx={{ textAlign: "center" }} className="text-white">
-            <Button
-              id={`basic-button-${item._id}`}
-              aria-controls={`basic-menu-${item._id}`}
-              aria-haspopup="true"
-              aria-expanded={Boolean(anchorElArray[index])}
-              onClick={(event) => handleUpdateStatusMenuClick(event, index)}
-            >
-              Status
-            </Button>
-            <Menu
-              id={`basic-menu-${item._id}`}
-              anchorEl={anchorElArray[index]}
-              open={Boolean(anchorElArray[index])}
-              onClose={() => handleUpdateStatusMenuClose(index)}
-              MenuListProps={{ "aria-labelledby": `basic-button-${item._id}` }}
-            >
-              <MenuItem
-                onClick={() => handleConfirmedOrder(item._id, index)}
-disabled={
-  item.orderStatus.toUpperCase() === "DELIVERED" ||
-  item.orderStatus.toUpperCase() === "SHIPPED" ||
-  item.orderStatus.toUpperCase() === "CONFIRMED"
-}
+{/* Status Update Menu */}
+<TableCell sx={{ textAlign: "center" }} className="text-white">
+  <Button
+    id={`basic-button-${item._id}`}
+    aria-controls={`basic-menu-${item._id}`}
+    aria-haspopup="true"
+    aria-expanded={Boolean(anchorElArray[index])}
+    onClick={(event) => handleUpdateStatusMenuClick(event, index)}
+  >
+    Status
+  </Button>
+  <Menu
+    id={`basic-menu-${item._id}`}
+    anchorEl={anchorElArray[index]}
+    open={Boolean(anchorElArray[index])}
+    onClose={() => handleUpdateStatusMenuClose(index)}
+    MenuListProps={{ "aria-labelledby": `basic-button-${item._id}` }}
+  >
+    <MenuItem
+      onClick={() => handleConfirmedOrder(item._id, index)}
+      disabled={[
+        "CONFIRMED",
+        "SHIPPED",
+        "OUTFORDELIVERY",
+        "DELIVERED",
+        "CANCELLED",
+      ].includes(item.orderStatus?.toUpperCase())}
+    >
+      CONFIRM ORDER
+    </MenuItem>
 
-              >
-                CONFIRMED ORDER
-              </MenuItem>
-              <MenuItem
-                onClick={() => handleShippedOrder(item._id, index)}
-                disabled={
-                  item.orderStatus === "DELIVERED" ||
-                  item.orderStatus === "SHIPPED"
-                }
-              >
-                SHIPPED ORDER
-              </MenuItem>
-              <MenuItem onClick={() => handleDeliveredOrder(item._id,index)}>
-                DELIVERED ORDER
-              </MenuItem>
-            </Menu>
-          </TableCell>
+    <MenuItem
+      onClick={() => handleShippedOrder(item._id, index)}
+      disabled={[
+        "SHIPPED",
+        "OUTFORDELIVERY",
+        "DELIVERED",
+        "CANCELLED",
+      ].includes(item.orderStatus?.toUpperCase())}
+    >
+      SHIP ORDER
+    </MenuItem>
+
+    <MenuItem
+      onClick={() => handleOutForDeliveryOrder(item._id, index)}
+      disabled={[
+        "OUTFORDELIVERY",
+        "DELIVERED",
+        "CANCELLED",
+      ].includes(item.orderStatus?.toUpperCase())}
+    >
+      OUT FOR DELIVERY
+    </MenuItem>
+
+    <MenuItem
+      onClick={() => handleDeliveredOrder(item._id, index)}
+      disabled={["DELIVERED", "CANCELLED"].includes(item.orderStatus?.toUpperCase())}
+    >
+      DELIVER ORDER
+    </MenuItem>
+  </Menu>
+</TableCell>
+
 
           {/* Delete Button */}
           <TableCell sx={{ textAlign: "center" }} className="text-white">

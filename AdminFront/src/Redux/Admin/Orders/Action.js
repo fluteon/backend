@@ -22,6 +22,9 @@ import {
   shipOrderFailure,
   shipOrderRequest,
   shipOrderSuccess,
+    outForDeliveryOrderFailure,
+  outForDeliveryOrderRequest,
+  outForDeliveryOrderSuccess,
 } from "./ActionCreator";
 
 export const getOrders = (reqData) => {
@@ -124,3 +127,17 @@ export const deleteOrder = (orderId) => {
 //     dispatch(placedOrderFailure(error.message));
 //   }
 // };
+
+
+export const outForDeliveryOrder = (orderId) => async (dispatch) => {
+  dispatch(outForDeliveryOrderRequest());
+
+  try {
+    const response = await api.put(`/api/admin/orders/${orderId}/out-for-delivery`);
+    const data = response.data;
+    console.log("out-for-delivery order", data);
+    dispatch(outForDeliveryOrderSuccess(data));
+  } catch (error) {
+    dispatch(outForDeliveryOrderFailure(error.message));
+  }
+};

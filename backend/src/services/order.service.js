@@ -127,8 +127,6 @@ async function createOrder(user, shippAddress) {
   return savedOrder; // this will give you order._id
 }
 
-
-
 async function placedOrder(orderId) {
   const order = await findOrderById(orderId);
 
@@ -155,9 +153,6 @@ async function placedOrder(orderId) {
   return updatedOrder;
 }
 
-
-
-
 async function confirmedOrder(orderId) {
   const order = await findOrderById(orderId);
   order.orderStatus = "CONFIRMED";
@@ -171,6 +166,19 @@ async function shipOrder(orderId) {
   order.statusUpdatedAt = new Date();
   return await order.save();
 }
+
+async function outForDelivery(orderId) {
+  const order = await findOrderById(orderId);
+
+  if (!order) {
+    throw new Error("Order not found with ID: " + orderId);
+  }
+
+  order.orderStatus = "OUTFORDELIVERY";
+  order.statusUpdatedAt = new Date();
+  return await order.save();
+}
+
 
 async function deliveredOrder(orderId) {
   const order = await findOrderById(orderId);
@@ -276,4 +284,5 @@ module.exports = {
   usersOrderHistory,
   getAllOrders,
   deleteOrder,
+  outForDelivery
 };

@@ -14,6 +14,9 @@ import {
   GET_ORDERS_FAILURE,
   GET_ORDERS_REQUEST,
   GET_ORDERS_SUCCESS,
+  OUT_FOR_DELIVERY_ORDER_FAILURE,
+  OUT_FOR_DELIVERY_ORDER_REQUEST,
+  OUT_FOR_DELIVERY_ORDER_SUCCESS,
   PLACED_ORDER_FAILURE,
   PLACED_ORDER_REQUEST,
   PLACED_ORDER_SUCCESS,
@@ -115,6 +118,20 @@ const adminOrderReducer = (state = initialState, action) => {
         isLoading: false,
         error: action.payload,
       };
+      case OUT_FOR_DELIVERY_ORDER_REQUEST:
+  return { ...state, loading: true };
+
+case OUT_FOR_DELIVERY_ORDER_SUCCESS:
+  return {
+    ...state,
+    loading: false,
+    orders: state.orders.map((order) =>
+      order._id === action.payload._id ? action.payload : order
+    ),
+  };
+
+case OUT_FOR_DELIVERY_ORDER_FAILURE:
+  return { ...state, loading: false, error: action.payload };
     default:
       return state;
   }

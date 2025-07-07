@@ -2,20 +2,22 @@ const nodemailer = require("nodemailer");
 require("dotenv").config();
 
 const transporter = nodemailer.createTransport({
-  host: process.env.BREVO_HOST,         // smtp-relay.brevo.com
-  port: process.env.BREVO_PORT,         // 587
-  secure: false,                        // Use TLS (false for port 587)
+  host: process.env.BREVO_HOST,
+  port: process.env.BREVO_PORT,         
+  secure: false,                        
   auth: {
-    user: process.env.BREVO_USER,       // your Brevo SMTP user (like: 90d66xxx@smtp-brevo.com)
-    pass: process.env.BREVO_PASS,       // your Brevo SMTP key/password
+    user: process.env.BREVO_USER,      
+    pass: process.env.BREVO_PASS,       
   },
 });
 
 async function sendOrderConfirmationEmail(to, order) {
+
+  console.log(" full order history", order)
   const itemsList = order.orderItems
     .map(
       (item) =>
-        `<li>${item.product.title} - Qty: ${item.quantity}, Price: ₹${item.product.price}</li>`
+        `<li>${item.product.title}, <li>${item.size}, - Qty: ${item.quantity}, Price: ₹${item.discountedPrice}</li>`
     )
     .join("");
 
