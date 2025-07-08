@@ -88,47 +88,34 @@ const getUserProfileByToken=async(token)=>{
     }
 }
 
-const getAllUsers=async()=>{
-    try {
-        const users=await User.find();
-        return users;
-    } catch (error) {
-        console.log("error - ",error)
-        throw new Error(error.message)
-    }
-}
+// const getAllUsers=async()=>{
+//     try {
+//         const users=await User.find();
+//         return users;
+//     } catch (error) {
+//         console.log("error - ",error)
+//         throw new Error(error.message)
+//     }
+// }
 
+const getAllUsers = async ({ pageNumber = 1, pageSize = 10 }) => {
+  pageNumber = parseInt(pageNumber);
+  pageSize = parseInt(pageSize);
 
-// const sendEmail = async (email, otp) => {
-//   const transporter = nodemailer.createTransport({
-//     service: "gmail",
-//     auth: {
-//       user: "shubham.singh7985@gmail.com",
-//       pass: "eyyi jjfk neka foit", // Use App Password if 2FA is enabled
-//     },
-//   });
+  const totalUsers = await User.countDocuments();
 
-//   const mailOptions = {
-//     from: "Fluteon <shubham.singh7985@gmail.com>",
-//     to: email,
-//     subject: "Your OTP for Fluteon Account Verification",
-//     html: `
-//       <div style="font-family: Arial, sans-serif; padding: 20px;">
-//         <h2 style="color: #5c4dff;">Welcome to Fluteon!</h2>
-//         <p>Thank you for using our platform. Please use the OTP below to verify your email address:</p>
-//         <h1 style="letter-spacing: 5px; background: #f0f0f0; padding: 10px 20px; display: inline-block; border-radius: 5px;">
-//           ${otp}
-//         </h1>
-//         <p style="margin-top: 20px;">⚠️ <strong>Do not share this OTP</strong> with anyone. It will expire in <strong>10 minute</strong>.</p>
-//         <hr style="margin: 20px 0;">
-//         <p style="font-size: 0.9em; color: #777;">If you did not request this OTP, please ignore this email.</p>
-//         <p style="color: #aaa;">— Team Fluteon</p>
-//       </div>
-//     `,
-//   };
+  const users = await User.find()
+    .skip((pageNumber - 1) * pageSize)
+    .limit(pageSize);
 
-//   await transporter.sendMail(mailOptions);
-// };
+  const totalPages = Math.ceil(totalUsers / pageSize);
+
+  return {
+    users,
+    currentPage: pageNumber,
+    totalPages,
+  };
+};
 
 const sendEmail = async (email, otp) => {
   try {

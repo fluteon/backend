@@ -27,21 +27,35 @@ import {
   outForDeliveryOrderSuccess,
 } from "./ActionCreator";
 
-export const getOrders = (reqData) => {
-  console.log("get all orders ", reqData);
+// export const getOrders = (reqData) => {
+//   console.log("get all orders ", reqData);
+//   return async (dispatch) => {
+//     dispatch(getOrdersRequest());
+//     try {
+     
+//       const response = await api.get(`/api/admin/orders/`);
+//       console.log("get all orders ", response.data);
+//       dispatch(getOrdersSuccess(response.data));
+//     } catch (error) {
+//       console.log("catch error ", error);
+//       dispatch(getOrdersFailure(error.message));
+//     }
+//   };
+// };
+
+export const getOrders = ({ page = 1, pageSize = 10 } = {}) => {
   return async (dispatch) => {
     dispatch(getOrdersRequest());
     try {
-     
-      const response = await api.get(`/api/admin/orders/`);
-      console.log("get all orders ", response.data);
+      const response = await api.get(`/api/admin/orders?page=${page}&pageSize=${pageSize}`);
       dispatch(getOrdersSuccess(response.data));
     } catch (error) {
-      console.log("catch error ", error);
       dispatch(getOrdersFailure(error.message));
     }
   };
 };
+
+
 
 export const confirmOrder = (orderId) => async (dispatch) => {
   dispatch(confirmedOrderRequest());

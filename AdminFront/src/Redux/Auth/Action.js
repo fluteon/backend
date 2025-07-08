@@ -76,24 +76,43 @@ export const getUser = (token) => {
   };
 };
 
-export const allUser = () => {
+// export const allUser = () => {
+//   return async (dispatch) => {
+//     dispatch({ type: GET_ALL_USERS_REQUEST }); // optional but good for loading state
+
+//     try {
+//       const response = await axios.get(`${API_BASE_URL}/api/users`);
+//       const users = response.data;
+
+//       console.log("all users..", users);
+
+//       dispatch({ type: GET_ALL_USERS_SUCCESS, payload: users }); // ✅ CORRECTED
+//     } catch (err) {
+//       const errorMessage = err.message;
+//       dispatch({ type: GET_ALL_USERS_FAILURE, payload: errorMessage });
+//     }
+//   };
+// };
+
+export const allUser = (page = 1, limit = 10) => {
   return async (dispatch) => {
-    dispatch({ type: GET_ALL_USERS_REQUEST }); // optional but good for loading state
+    dispatch({ type: GET_ALL_USERS_REQUEST });
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/users`);
-      const users = response.data;
+      const response = await axios.get(`${API_BASE_URL}/api/users?page=${page}&limit=${limit}`);
 
-      console.log("all users..", users);
+      const { users, totalPages, currentPage } = response.data;
 
-      dispatch({ type: GET_ALL_USERS_SUCCESS, payload: users }); // ✅ CORRECTED
+      dispatch({
+        type: GET_ALL_USERS_SUCCESS,
+        payload: { users, totalPages, currentPage },
+      });
     } catch (err) {
-      const errorMessage = err.message;
+      const errorMessage = err.response?.data?.message || err.message;
       dispatch({ type: GET_ALL_USERS_FAILURE, payload: errorMessage });
     }
   };
 };
-
 
 export const logout = (token) => {
     return async (dispatch) => {

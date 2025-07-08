@@ -1,14 +1,29 @@
 
 const orderService = require("../services/order.service");
 
+// const getAllOrders = async (req, res) => {
+//   try {
+//     const orders = await orderService.getAllOrders();
+//     return res.status(202).send(orders);
+//   } catch (error) {
+//     res.status(500).send({ error: "Something went wrong" });
+//   }
+// };
+
 const getAllOrders = async (req, res) => {
   try {
-    const orders = await orderService.getAllOrders();
-    return res.status(202).send(orders);
+    const page = parseInt(req.query.page) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 10;
+
+    const result = await orderService.getAllOrders(page, pageSize);
+
+    return res.status(200).send(result);
   } catch (error) {
+    console.error("Admin Order Fetch Error:", error.message);
     res.status(500).send({ error: "Something went wrong" });
   }
 };
+
 
 const confirmedOrder = (req, res) => {
   try {

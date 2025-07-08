@@ -18,13 +18,26 @@ const getUserProfile=async (req,res)=>{
     }
 }
 
-const getAllUsers=async(req,res)=>{
-    try {
-        const users=await userService.getAllUsers()
-        return res.status(200).send(users)
-    } catch (error) {
-        return res.status(500).send({error:error.message})
-    }
-}
+// const getAllUsers=async(req,res)=>{
+//     try {
+//         const users=await userService.getAllUsers()
+//         return res.status(200).send(users)
+//     } catch (error) {
+//         return res.status(500).send({error:error.message})
+//     }
+// }
+
+const getAllUsers = async (req, res) => {
+  try {
+    const { pageNumber, pageSize } = req.query;
+
+    const result = await userService.getAllUsers({ pageNumber, pageSize });
+
+    return res.status(200).send(result);
+  } catch (error) {
+    return res.status(500).send({ error: error.message });
+  }
+};
+
 
 module.exports={getUserProfile,getAllUsers}

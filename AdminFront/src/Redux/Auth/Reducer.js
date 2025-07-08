@@ -65,6 +65,8 @@ import {
 const initialState = {
   user: null,
   userList: [],
+  currentPage: 1,
+  totalPages: 1,
   isLoading: false,
   error: null,
 };
@@ -105,11 +107,20 @@ const authReducer = (state = initialState, action) => {
         user: action.payload, // ✅ Only updates user
       };
 
-    case GET_ALL_USERS_SUCCESS:
+    // case GET_ALL_USERS_SUCCESS:
+    //   return {
+    //     ...state,
+    //     isLoading: false,
+    //     userList: action.payload, // ✅ Only updates userList
+    //   };
+
+        case GET_ALL_USERS_SUCCESS:
       return {
         ...state,
         isLoading: false,
-        userList: action.payload, // ✅ Only updates userList
+        userList: action.payload.users,      // ✅ payload is { users, currentPage, totalPages }
+        currentPage: action.payload.currentPage,
+        totalPages: action.payload.totalPages,
       };
 
     case LOGOUT:

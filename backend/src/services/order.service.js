@@ -127,18 +127,51 @@ async function createOrder(user, shippAddress) {
   return savedOrder; // this will give you order._id
 }
 
-async function placedOrder(orderId) {
-  const order = await findOrderById(orderId);
+// async function placedOrder(orderId) {
+//   const order = await findOrderById(orderId);
 
+//   if (!order) throw new Error("Order not found");
+
+//   order.paymentDetails.paymentStatus = "COMPLETED";
+//   order.statusUpdatedAt = new Date();
+//   order.orderStatus = "CONFIRMED"; // ✅ Set CONFIRMED on payment
+
+//   const updatedOrder = await order.save();
+
+//   // ✅ Remove purchased items from cart after payment success
+//   const productIds = order.orderItems.map((item) => item.product._id);
+//   await CartItem.deleteMany({
+//     userId: order.user._id,
+//     product: { $in: productIds },
+//   });
+
+//   // ✅ Send order confirmation email
+//   if (updatedOrder?.user?.email) {
+//     await sendOrderConfirmationEmail(updatedOrder.user.email, updatedOrder);
+//   }
+
+//   return updatedOrder;
+// }
+
+
+// by gpt
+
+async function placedOrder(orderId, paymentMeta = {}) {
+  const order = await findOrderById(orderId);
   if (!order) throw new Error("Order not found");
+
+  // ✅ Apply payment meta if provided
+  if (paymentMeta.paymentId) order.paymentDetails.paymentId = paymentMeta.paymentId;
+  if (paymentMeta.method) order.paymentDetails.paymentMethod = paymentMeta.method;
+  if (paymentMeta.transactionId) order.paymentDetails.transactionId = paymentMeta.transactionId;
 
   order.paymentDetails.paymentStatus = "COMPLETED";
   order.statusUpdatedAt = new Date();
-  order.orderStatus = "CONFIRMED"; // ✅ Set CONFIRMED on payment
+  order.orderStatus = "CONFIRMED";
 
   const updatedOrder = await order.save();
 
-  // ✅ Remove purchased items from cart after payment success
+  // ✅ Clear cart items after payment success
   const productIds = order.orderItems.map((item) => item.product._id);
   await CartItem.deleteMany({
     userId: order.user._id,
@@ -152,6 +185,7 @@ async function placedOrder(orderId) {
 
   return updatedOrder;
 }
+
 
 async function confirmedOrder(orderId) {
   const order = await findOrderById(orderId);
@@ -251,18 +285,44 @@ const usersOrderHistory = async (userId) => {
 //     .lean();
 // }
 
-async function getAllOrders() {
-  return await Order.find({ "paymentDetails.paymentStatus": "COMPLETED" }) // ✅ only paid orders
+// async function getAllOrders() {
+//   return await Order.find({ "paymentDetails.paymentStatus": "COMPLETED" }) // ✅ only paid orders
+//     .populate("user")
+//     .populate("shippingAddress")
+//     .populate({
+//       path: "orderItems",
+//       populate: {
+//         path: "product",
+//       },
+//     })
+//     .sort({ createdAt: -1 }) // optional: newest first
+//     .lean();
+// }
+
+
+async function getAllOrders(page = 1, pageSize = 10) {
+  const skip = (page - 1) * pageSize;
+
+  const query = Order.find({ "paymentDetails.paymentStatus": "COMPLETED" })
     .populate("user")
     .populate("shippingAddress")
     .populate({
       path: "orderItems",
-      populate: {
-        path: "product",
-      },
+      populate: { path: "product" },
     })
-    .sort({ createdAt: -1 }) // optional: newest first
-    .lean();
+    .sort({ createdAt: -1 });
+
+  const totalOrders = await Order.countDocuments({ "paymentDetails.paymentStatus": "COMPLETED" });
+  const totalPages = Math.ceil(totalOrders / pageSize);
+
+  const orders = await query.skip(skip).limit(pageSize).lean();
+
+  return {
+    content: orders,
+    currentPage: page,
+    totalPages,
+    totalOrders,
+  };
 }
 
 

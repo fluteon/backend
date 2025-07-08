@@ -28,6 +28,8 @@ import {
 const initialState = {
   loading: false,
   orders: [],
+  currentPage: 1,
+  totalPages: 1,
   error: "",
 };
 
@@ -38,12 +40,22 @@ const adminOrderReducer = (state = initialState, action) => {
         ...state,
         loading: true,
       };
+    // case GET_ORDERS_SUCCESS:
+    //   return {
+    //     loading: false,
+    //     orders: action.payload,
+    //     error: "",
+    //   };
     case GET_ORDERS_SUCCESS:
-      return {
-        loading: false,
-        orders: action.payload,
-        error: "",
-      };
+  return {
+    ...state,
+    loading: false,
+    orders: action.payload.content, // 🟢 the paginated orders array
+    totalPages: action.payload.totalPages, // 🟢 total pages returned from backend
+    currentPage: action.payload.currentPage, // 🟢 current page
+    error: "",
+  };
+
     case GET_ORDERS_FAILURE:
       return {
         loading: false,

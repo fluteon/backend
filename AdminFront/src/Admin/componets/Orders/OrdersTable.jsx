@@ -34,6 +34,8 @@ import {
   shipOrder,
 outForDeliveryOrder
 } from "../../../Redux/Admin/Orders/Action";
+import { motion } from 'framer-motion';
+
 
 import {  getPaymentHistory}  from "../../../Redux/Customers/Payment/Action"
 import { configure } from "@testing-library/react";
@@ -48,23 +50,34 @@ const { history, loading, error } = useSelector((store) => store.payment); // fr
 
 const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-const handleViewPaymentHistory = (userId) => {
-  dispatch(getPaymentHistory(userId)); // Redux action
+const handleViewPaymentHistory = (userId,orderId) => {
+  dispatch(getPaymentHistory(userId, orderId)); // Redux action
   setShowPaymentModal(true); // Open modal
 };
 
   const dispatch = useDispatch();
   // const jwt = localStorage.getItem("jwt");
   const { adminsOrder } = useSelector((store) => store);
+  const { orders, totalPages, currentPage } = adminsOrder
+  const [page, setPage] = useState(1);
+
+
+
+function handlePaginationChange(event, value) {
+  setPage(value);
+}
+
+
   const [anchorElArray, setAnchorElArray] = useState([]);
   console.log("admin details",adminsOrder)
 const [selectedOrder, setSelectedOrder] = useState(null);
 const handleOpenOrderModal = (order) => setSelectedOrder(order);
 
 const handleCloseModal = () => setSelectedOrder(null);
-  useEffect(() => {
-    dispatch(getOrders());
-  }, [adminsOrder.delivered, adminsOrder.shipped, adminsOrder.confirmed]);
+useEffect(() => {
+  dispatch(getOrders({ page }));
+}, [page, adminsOrder.delivered, adminsOrder.shipped, adminsOrder.confirmed]);
+
 
   const handleUpdateStatusMenuClick = (event, index) => {
     const newAnchorElArray = [...anchorElArray];
@@ -81,9 +94,6 @@ const handleCloseModal = () => setSelectedOrder(null);
     const value = event.target.value;
     setFormData({ ...formData, [name]: value });
   };
-  function handlePaginationChange(event, value) {
-    console.log("Current page:", value);
-  }
   const handleConfirmedOrder = (orderId, index) => {
     handleUpdateStatusMenuClose(index);
     dispatch(confirmOrder(orderId));
@@ -130,12 +140,36 @@ console.log("Payment History:", history);
 <>
     {selectedOrder && (
       
+<div className="">
+<motion.div
+  initial={{ opacity: 0, scale: 0.95 }}
+  animate={{ opacity: 1, scale: 1 }}
+  exit={{ opacity: 0, scale: 0.95 }}
+  transition={{ duration: 0.2 }}
+  className="relative backdrop-blur-md bg-white/30 text-black rounded-xl shadow-2xl"
+  style={{
+    position: "fixed",
+    top: "10%",
+    left: "30%",
+    transform: "translate(-50%, -50%)",
+    width: "95vw",
+    maxWidth: "800px",
+    maxHeight: "90vh",
+    overflowY: "auto",
+    padding: "24px",
+    zIndex: 9999,
+    borderRadius: "1rem",
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
+  }}
+>
 
-   <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="p-4 bg-[#0d0d22] border text-white rounded-lg shadow-lg max-w-2xl w-full relative">
 
+  
       {/* Close Button */}
-<button
+ <div className="max-h-[90vh] overflow-y-auto p-6">
+  <button
   onClick={handleCloseModal}
   className="absolute !top-4 !right-4 !w-12 !h-12 bg-white text-gray-600 rounded-full text-2xl hover:text-red-500 shadow-lg flex items-center justify-center z-50"
   style={{
@@ -150,14 +184,16 @@ console.log("Payment History:", history);
 >
   <MdClose size={24} />
 </button>
-      <h2 className="text-xl font-bold mb-4">Order Details</h2>
-      <div className="space-y-2">
+
+        <h2 className="text-xl font-bold mb-4">Order Details</h2>
+      <div className="space-y-2 mb-2 pb-4">
         <p><strong>Order ID:</strong> {selectedOrder._id}</p>
         <p><strong>Status:</strong> {selectedOrder.orderStatus}</p>
         <p><strong>Date:</strong> {new Date(selectedOrder.orderDate).toLocaleString()}</p>
         <p><strong>Total Price:</strong> ₹{selectedOrder.totalPrice}</p>
         <p><strong>Discounted Price:</strong> ₹{selectedOrder.totalDiscountedPrice}</p>
         <p><strong>Payment ID:</strong> {selectedOrder.paymentDetails?.paymentId}</p>
+        <p><strong>Payment Method:</strong> {selectedOrder.paymentDetails?.paymentMethod}</p>
       </div>
       <hr className="my-4" />
       {/* Shipping Info */}
@@ -177,34 +213,76 @@ console.log("Payment History:", history);
       <hr className="my-4" />
       {/* Order Items */}
       <h3 className="text-lg font-semibold mb-2">Items</h3>
-      <div className="grid gap-3">
-        {selectedOrder.orderItems.map((item, index) => (
-          <div key={index} className="flex items-center gap-4 border-b pb-2">
-            <img
-              src={`${item.product.imageUrl?.[0]}`}
-              alt={item.product.title}
-              className="w-16 h-16 object-cover rounded"
-            />
-            <div>
-              <p className="font-medium">{item.product.title}</p>
-              <p>Qty: {item.quantity}</p>
-              <p>Price: ₹{item.product.price}</p>
-            </div>
-          </div>
-        ))}
+<div className="grid gap-3">
+  {selectedOrder.orderItems.map((item, index) => (
+    <div key={index} className="flex items-center gap-4 border-b pb-2">
+      
+      {/* Image wrapper with inline styles */}
+      <div
+        style={{
+          width: "40px",
+          height: "40px",
+          overflow: "hidden",
+          borderRadius: "6px",
+          flexShrink: 0,
+        }}
+      >
+        <img
+          src={item.product.imageUrl?.[0]}
+          alt={item.product.title}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: "block",
+          }}
+        />
       </div>
 
+      <div>
+        <p style={{ fontWeight: "500", fontSize: "14px" }}>{item.product.title}</p>
+        <p style={{ fontSize: "12px" }}>Qty: {item.quantity}</p>
+        <p style={{ fontSize: "12px" }}>Size: {item.size}</p>
+        <p style={{ fontSize: "12px" }}>Price: ₹{item.discountedPrice}</p>
+      </div>
     </div>
-  </div>
+  ))}
+</div>
+
+
+</div>
+</motion.div>
+
+    </div>
+  
 
 )}
 
-
 {showPaymentModal && (
-
-
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="p-4 bg-[#0d0d22] border text-white rounded-lg shadow-lg max-w-2xl w-full relative">
+    <div className="">
+<motion.div
+  initial={{ opacity: 0, scale: 0.95 }}
+  animate={{ opacity: 1, scale: 1 }}
+  exit={{ opacity: 0, scale: 0.95 }}
+  transition={{ duration: 0.2 }}
+  className="relative backdrop-blur-md bg-white/30 text-black rounded-xl shadow-2xl"
+  style={{
+    position: "fixed",
+    top: "40%",
+    left: "30%",
+    transform: "translate(-50%, -50%)",
+    width: "95vw",
+    maxWidth: "800px",
+    maxHeight: "90vh",
+    overflowY: "auto",
+    padding: "24px",
+    zIndex: 9999,
+    borderRadius: "1rem",
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
+  }}
+>
       <button
         style={{
     top: '1rem',
@@ -251,7 +329,7 @@ console.log("Payment History:", history);
 </ul>
 
       )}
-    </div>
+    </motion.div>
   </div>
 )}
           <Box>
@@ -347,7 +425,7 @@ console.log("Payment History:", history);
           </TableCell>
 
           {/* Title + Brand */}
-          <TableCell sx={{ py: (theme) => `${theme.spacing(0.5)} !important` }}>
+          <TableCell >
             <Box sx={{ display: "flex", flexDirection: "column" }}>
               <Typography sx={{ fontWeight: 500, fontSize: "0.875rem !important" }}>
                 {item.orderItems.map(o => o.product?.title).filter(Boolean).join(", ")}
@@ -359,20 +437,21 @@ console.log("Payment History:", history);
           </TableCell>
 
           {/* Price */}
-          <TableCell>{item.totalPrice}</TableCell>
+          <TableCell>{item.totalDiscountedPrice}</TableCell>
 
           {/* Order ID */}
           <TableCell>{item._id}</TableCell>
 
           {/* Payment Button */}
           <TableCell>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => handleViewPaymentHistory(item.user._id)}
-            >
-              Payment History
-            </Button>
+     <Button
+  variant="outlined"
+  size="small"
+  onClick={() => handleViewPaymentHistory(item.user._id, item._id)}
+>
+  Payment History
+</Button>
+
           </TableCell>
 
           {/* View Button */}
@@ -430,7 +509,7 @@ console.log("Payment History:", history);
     anchorEl={anchorElArray[index]}
     open={Boolean(anchorElArray[index])}
     onClose={() => handleUpdateStatusMenuClose(index)}
-    MenuListProps={{ "aria-labelledby": `basic-button-${item._id}` }}
+    MenuListProps={{ "aria-labelledby":` basic-button-${item._id}` }}
   >
     <MenuItem
       onClick={() => handleConfirmedOrder(item._id, index)}
@@ -504,13 +583,15 @@ console.log("Payment History:", history);
 
       </Card>
       <Card className="mt-2 felx justify-center items-center">
-        <Pagination
-          className="py-5 w-auto"
-          size="large"
-          count={10}
-          color="primary"
-          onChange={handlePaginationChange}
-        />
+<Pagination
+  className="py-5 w-auto"
+  size="large"
+  count={totalPages}
+  page={page}
+  color="primary"
+  onChange={handlePaginationChange}
+/>
+
       </Card>
     </Box>
 
@@ -519,3 +600,4 @@ console.log("Payment History:", history);
 };
 
 export default OrdersTable;
+
