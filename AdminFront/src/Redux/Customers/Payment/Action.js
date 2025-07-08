@@ -90,12 +90,31 @@ export const updatePaymentFailure = (error) => {
 };
 
  
-  export const getPaymentHistory = (userId) => async (dispatch) => {
+//   export const getPaymentHistory = (userId) => async (dispatch) => {
+//   dispatch({ type: GET_PAYMENT_HISTORY_REQUEST });
+//   try {
+//     const { data } = await api.get(`/api/payments/payment-history/${userId}`);
+//     dispatch({ type: GET_PAYMENT_HISTORY_SUCCESS, payload: data });
+//   } catch (error) {
+//     dispatch({ type: GET_PAYMENT_HISTORY_FAILURE, payload: error.message });
+//   }
+// };
+
+export const getPaymentHistory = (userId, orderId = null) => async (dispatch) => {
   dispatch({ type: GET_PAYMENT_HISTORY_REQUEST });
   try {
-    const { data } = await api.get(`/api/payments/payment-history/${userId}`);
+    let url = `/api/payments/payment-history/${userId}`;
+    
+    if (orderId) {
+      url += `?orderId=${orderId}`;  // append query param
+    }
+
+    const { data } = await api.get(url);
     dispatch({ type: GET_PAYMENT_HISTORY_SUCCESS, payload: data });
   } catch (error) {
-    dispatch({ type: GET_PAYMENT_HISTORY_FAILURE, payload: error.message });
+    dispatch({
+      type: GET_PAYMENT_HISTORY_FAILURE,
+      payload: error.response?.data?.message || error.message,
+    });
   }
 };
