@@ -82,13 +82,39 @@ const CreateProductForm = () => {
     setPreviewImages(previews);
   };
 
+  // const handleChange = (e) => {
+  //   const { name, value } = e.target;
+  //   setProductData((prevState) => ({
+  //     ...prevState,
+  //     [name]: value,
+  //   }));
+  // };
+
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setProductData((prevState) => ({
+  const { name, value } = e.target;
+
+  setProductData((prevState) => {
+    const updatedData = {
       ...prevState,
       [name]: value,
-    }));
-  };
+    };
+
+    if (
+      (name === "price" || name === "discountedPrice") &&
+      updatedData.price &&
+      updatedData.discountedPrice &&
+      parseFloat(updatedData.price) > parseFloat(updatedData.discountedPrice)
+    ) {
+      const price = parseFloat(updatedData.price);
+      const discountedPrice = parseFloat(updatedData.discountedPrice);
+      const discount = ((price - discountedPrice) / price) * 100;
+      updatedData.discountPersent = discount.toFixed(2); // rounded to 2 decimal places
+    }
+
+    return updatedData;
+  });
+};
+
 
   const handleSizeChange = (e, index) => {
     let { name, value } = e.target;
@@ -433,8 +459,6 @@ useEffect(() => {
     />
   </Grid>
 )}
-
-
 
           {sizeChart && (
             <Box mt={2}>
