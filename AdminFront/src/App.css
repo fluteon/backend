@@ -28,8 +28,5 @@
   pointer-events: none; /* optional to prevent accidental clicks when empty */
 }
 
-body{
-  overflow: hidden;
 
-}
 
