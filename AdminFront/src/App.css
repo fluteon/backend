@@ -28,5 +28,14 @@
   pointer-events: none; /* optional to prevent accidental clicks when empty */
 }
 
+/* body{
+  overflow: hidden;
 
+} */
 
+CreateProductForm.css
+.createProductContainer {
+  padding: 1rem;
+  overflow-y: auto; /* important */
+  max-height: 100vh; /* only if you're restricting height */
+}
