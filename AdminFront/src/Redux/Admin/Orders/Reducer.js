@@ -23,6 +23,9 @@ import {
   SHIP_ORDER_FAILURE,
   SHIP_ORDER_REQUEST,
   SHIP_ORDER_SUCCESS,
+    RETURNED_ORDER_REQUEST,
+  RETURNED_ORDER_SUCCESS,
+  RETURNED_ORDER_FAILURE,
 } from "./ActionType";
 
 const initialState = {
@@ -144,6 +147,20 @@ case OUT_FOR_DELIVERY_ORDER_SUCCESS:
 
 case OUT_FOR_DELIVERY_ORDER_FAILURE:
   return { ...state, loading: false, error: action.payload };
+      case RETURNED_ORDER_REQUEST:
+      return { ...state, loading: true };
+
+    case RETURNED_ORDER_SUCCESS:
+      return {
+        ...state,
+        loading: false,
+        orders: state.orders.map((order) =>
+          order._id === action.payload._id ? action.payload : order
+        ),
+      };
+
+    case RETURNED_ORDER_FAILURE:
+      return { ...state, loading: false, error: action.payload };
     default:
       return state;
   }

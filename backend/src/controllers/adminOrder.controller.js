@@ -86,6 +86,33 @@ const deleteOrder = (req, res) => {
   }
 };
 
+const returnOrder = async (req, res) => {
+  try {
+    const orderId = req.params.orderId;
+    const { reason } = req.body;
+    const order = await orderService.returnOrder(orderId, reason);
+    return res.status(202).send(order);
+  } catch (err) {
+    console.error("Return Order Error:", err.message);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+};
+
+const approveReturnOrder = async (req, res) => {
+  try {
+    const { status, adminNote } = req.body;
+    const orderId = req.params.orderId;
+
+    const updatedOrder = await orderService.approveReturnByAdmin(orderId, status, adminNote);
+    return res.status(200).json(updatedOrder);
+  } catch (err) {
+    console.error("Approve Return Order Error:", err.message);
+    res.status(500).json({ error: err.message || "Something went wrong" });
+  }
+};
+
+
+
 module.exports = {
   getAllOrders,
   confirmedOrder,
@@ -93,5 +120,7 @@ module.exports = {
   deliverOrder,
   cancelledOrder,
   deleteOrder,
-  outForDelivery
+  outForDelivery,
+  returnOrder,
+  approveReturnOrder
 };

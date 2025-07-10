@@ -63,6 +63,19 @@ const orderSchema = new Schema({
     type: Number,
     required: true,
   },
+  returnRequestedAt: {
+  type: Date,
+},
+  returnRejectedAt: {
+  type: Date,
+},
+returnReason: {
+  type: String,
+},
+adminNote: {
+  type: String,
+},
+
   createdAt: {
     type: Date,
     default: Date.now,

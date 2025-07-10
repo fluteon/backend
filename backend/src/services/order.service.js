@@ -228,6 +228,57 @@ async function cancelledOrder(orderId) {
   return await order.save();
 }
 
+async function returnOrder(orderId,reason=""){
+const order  = await findOrderById(orderId)
+if(!order){
+  throw new Error("Order not Found with Id : " +orderId)
+}
+
+if(order.orderStatus !== "DELIVERED"){
+  throw new Error("Only delivered order can be returned.")
+}
+
+order.orderStatus = "RETURNED_REQUESTED";
+order.statusUpdatedAt = new Date();
+order.returnRequestedAt = new Date();
+
+if(reason){
+  order.returnReason = reason;
+}
+const updatedOrder = await order.save()
+return updatedOrder;
+}
+
+async function approveReturnByAdmin(orderId, status, adminNote) {
+  const order = await findOrderById(orderId);
+  if (!order) throw new Error("Order not Found with Id : " + orderId);
+
+  if (order.orderStatus !== "RETURNED_REQUESTED") {
+    throw new Error("Only requested returns can be handled.");
+  }
+
+  if (status === "RETURN_APPROVED") {
+    order.orderStatus = "RETURNED";
+    order.returnApprovedAt = new Date();
+  } else if (status === "RETURN_REJECTED") {
+    order.orderStatus = "RETURN_REJECTED";
+    order.returnRejectedAt = new Date();
+  } else {
+    throw new Error("Invalid return status.");
+  }
+
+  order.statusUpdatedAt = new Date();
+
+  // 👇 Save this field
+  order.adminNote = adminNote;
+
+  const updatedOrder = await order.save();
+  return updatedOrder;
+}
+
+
+
+
 async function findOrderById(orderId) {
   console.log("🔍 [findOrderById] Searching for Order with ID:", orderId);
 
@@ -344,5 +395,7 @@ module.exports = {
   usersOrderHistory,
   getAllOrders,
   deleteOrder,
-  outForDelivery
+  outForDelivery,
+  returnOrder,
+  approveReturnByAdmin
 };

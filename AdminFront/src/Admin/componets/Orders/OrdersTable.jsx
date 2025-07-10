@@ -32,7 +32,8 @@ import {
   deliveredOrder,
   getOrders,
   shipOrder,
-outForDeliveryOrder
+outForDeliveryOrder,
+returnedOrder
 } from "../../../Redux/Admin/Orders/Action";
 import { motion } from 'framer-motion';
 
@@ -70,13 +71,27 @@ function handlePaginationChange(event, value) {
 
   const [anchorElArray, setAnchorElArray] = useState([]);
   console.log("admin details",adminsOrder)
-const [selectedOrder, setSelectedOrder] = useState(null);
-const handleOpenOrderModal = (order) => setSelectedOrder(order);
 
-const handleCloseModal = () => setSelectedOrder(null);
+
+const [selectedOrder, setSelectedOrder] = useState(null);
+
+const [showOrderModal, setShowOrderModal] = useState(false);
+
+
+const handleOpenOrderModal = (order) => {
+  setSelectedOrder(order);
+  setShowOrderModal(true); // open modal
+};
+
+const handleCloseModal = () => {
+  setSelectedOrder(null);
+  setShowOrderModal(false); // close modal
+};
+
+
 useEffect(() => {
   dispatch(getOrders({ page }));
-}, [page, adminsOrder.delivered, adminsOrder.shipped, adminsOrder.confirmed]);
+}, [page, adminsOrder.delivered, adminsOrder.shipped, adminsOrder.confirmed, adminsOrder.returned,]);
 
 
   const handleUpdateStatusMenuClick = (event, index) => {
@@ -136,9 +151,36 @@ console.log("Selected Order:", selectedOrder);
 console.log("Show Payment Modal:", showPaymentModal);
 console.log("Payment History:", history);
 
+
+const [showReturnModal, setShowReturnModal] = useState(false);
+const [returnMessage, setReturnMessage] = useState("");
+const [returnTime, setReturnTime] = useState(""); // In days
+const [isReturnAccepted, setIsReturnAccepted] = useState(true);
+
+const handleOpenReturnModal = (order) => {
+  setSelectedOrder(order);
+  setShowReturnModal(true);
+};
+
+const handleSubmitReturnDecision = () => {
+  const payload = {
+    orderId: selectedOrder._id,
+    status: isReturnAccepted ? "RETURN_APPROVED" : "RETURN_REJECTED",
+    adminNote: isReturnAccepted ? `Return in ${returnTime}` : returnMessage
+  };
+
+  dispatch(returnedOrder(payload)).then(() => {
+    dispatch(getOrders({ page }));
+    setShowReturnModal(false);
+    setReturnMessage("");
+    setReturnTime("");
+  });
+};
+
+
   return (
 <>
-    {selectedOrder && (
+    {selectedOrder && showOrderModal && (
       
 <div className="">
 <motion.div
@@ -332,6 +374,93 @@ console.log("Payment History:", history);
     </motion.div>
   </div>
 )}
+
+{showReturnModal && selectedOrder && (
+<motion.div
+  initial={{ opacity: 0, scale: 0.95 }}
+  animate={{ opacity: 1, scale: 1 }}
+  exit={{ opacity: 0, scale: 0.95 }}
+  transition={{ duration: 0.2 }}
+  className="relative backdrop-blur-md bg-white/30 text-black rounded-xl shadow-2xl"
+  style={{
+    position: "fixed",
+    top: "10%",
+    left: "30%",
+    transform: "translate(-50%, -50%)",
+    width: "95vw",
+    maxWidth: "800px",
+    maxHeight: "90vh",
+    overflowY: "auto",
+    padding: "24px",
+    zIndex: 9999,
+    borderRadius: "1rem",
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
+  }}
+>
+    <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md relative">
+      <button
+        className="absolute top-2 right-2 text-gray-500 hover:text-red-500"
+        onClick={() => setShowReturnModal(false)}
+      >
+        <MdClose size={24} />
+      </button>
+
+      <h2 className="text-xl font-semibold mb-4">Handle Return Request</h2>
+
+      <p className="text-sm mb-2">
+        <strong>Reason from customer:</strong> {selectedOrder.returnReason}
+      </p>
+
+      <div className="mb-2">
+        <label className="block font-medium">Return Decision:</label>
+        <select
+          value={isReturnAccepted ? "accept" : "reject"}
+          onChange={(e) => setIsReturnAccepted(e.target.value === "accept")}
+          className="border p-2 w-full rounded mt-1"
+        >
+          <option value="accept">Accept</option>
+          <option value="reject">Reject</option>
+        </select>
+      </div>
+
+      <div className="mb-2">
+        <label className="block font-medium">
+          {isReturnAccepted ? "Return Processing Time (in days)" : "Rejection Message"}
+        </label>
+        <input
+          type="text"
+          placeholder={isReturnAccepted ? "e.g. 5 days" : "e.g. Not eligible for return"}
+          className="border p-2 w-full rounded mt-1"
+          value={isReturnAccepted ? returnTime : returnMessage}
+          onChange={(e) =>
+            isReturnAccepted
+              ? setReturnTime(e.target.value)
+              : setReturnMessage(e.target.value)
+          }
+        />
+      </div>
+
+      <div className="flex justify-end gap-2 mt-4">
+        <Button
+          variant="outlined"
+          onClick={() => setShowReturnModal(false)}
+        >
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          color={isReturnAccepted ? "success" : "error"}
+          onClick={() => handleSubmitReturnDecision()}
+        >
+          Submit
+        </Button>
+      </div>
+    </div>
+  </motion.div>
+)}
+
           <Box>
       <Card className="p-3">
         <CardHeader
@@ -509,52 +638,92 @@ console.log("Payment History:", history);
     anchorEl={anchorElArray[index]}
     open={Boolean(anchorElArray[index])}
     onClose={() => handleUpdateStatusMenuClose(index)}
-    MenuListProps={{ "aria-labelledby":` basic-button-${item._id}` }}
+    MenuListProps={{ "aria-labelledby": `basic-button-${item._id}` }}
   >
+    {/* CONFIRM ORDER */}
     <MenuItem
       onClick={() => handleConfirmedOrder(item._id, index)}
-      disabled={[
-        "CONFIRMED",
-        "SHIPPED",
-        "OUTFORDELIVERY",
-        "DELIVERED",
-        "CANCELLED",
-      ].includes(item.orderStatus?.toUpperCase())}
+disabled={[
+  "CONFIRMED",
+  "SHIPPED",
+  "OUTFORDELIVERY",
+  "DELIVERED",
+  "CANCELLED",
+  "RETURNED_REQUESTED",
+  "RETURN_APPROVED",
+  "RETURN_REJECTED"
+].includes(item.orderStatus?.toUpperCase())}
+
     >
       CONFIRM ORDER
     </MenuItem>
 
+    {/* SHIP ORDER */}
     <MenuItem
       onClick={() => handleShippedOrder(item._id, index)}
-      disabled={[
-        "SHIPPED",
-        "OUTFORDELIVERY",
-        "DELIVERED",
-        "CANCELLED",
-      ].includes(item.orderStatus?.toUpperCase())}
+disabled={[
+  "SHIPPED",
+  "OUTFORDELIVERY",
+  "DELIVERED",
+  "CANCELLED",
+  "RETURNED_REQUESTED",
+  "RETURN_APPROVED",
+  "RETURN_REJECTED"
+].includes(item.orderStatus?.toUpperCase())}
+
     >
       SHIP ORDER
     </MenuItem>
 
+    {/* OUT FOR DELIVERY */}
     <MenuItem
       onClick={() => handleOutForDeliveryOrder(item._id, index)}
-      disabled={[
-        "OUTFORDELIVERY",
-        "DELIVERED",
-        "CANCELLED",
-      ].includes(item.orderStatus?.toUpperCase())}
+disabled={[
+  "OUTFORDELIVERY",
+  "DELIVERED",
+  "CANCELLED",
+  "RETURNED_REQUESTED",
+  "RETURN_APPROVED",
+  "RETURN_REJECTED"
+].includes(item.orderStatus?.toUpperCase())}
+
     >
       OUT FOR DELIVERY
     </MenuItem>
 
+    {/* DELIVER ORDER */}
     <MenuItem
       onClick={() => handleDeliveredOrder(item._id, index)}
-      disabled={["DELIVERED", "CANCELLED"].includes(item.orderStatus?.toUpperCase())}
+disabled={[
+  "DELIVERED",
+  "CANCELLED",
+  "RETURNED_REQUESTED",
+  "RETURN_APPROVED",
+  "RETURN_REJECTED"
+].includes(item.orderStatus?.toUpperCase())}
+
     >
       DELIVER ORDER
     </MenuItem>
+
+    {/* APPROVE RETURN - Opens Modal */}
+<MenuItem
+onClick={() => {
+  handleUpdateStatusMenuClose(index);
+  setShowOrderModal(false); // Close Order modal if open
+  setSelectedOrder(item);
+  setShowReturnModal(true);
+}}
+
+  disabled={item.orderStatus !== "RETURNED_REQUESTED"}
+>
+  APPROVE RETURN
+</MenuItem>
+
+
   </Menu>
 </TableCell>
+
 
 
           {/* Delete Button */}

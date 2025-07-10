@@ -25,6 +25,9 @@ import {
     outForDeliveryOrderFailure,
   outForDeliveryOrderRequest,
   outForDeliveryOrderSuccess,
+    returnedOrderRequest,
+  returnedOrderSuccess,
+  returnedOrderFailure,
 } from "./ActionCreator";
 
 // export const getOrders = (reqData) => {
@@ -153,5 +156,21 @@ export const outForDeliveryOrder = (orderId) => async (dispatch) => {
     dispatch(outForDeliveryOrderSuccess(data));
   } catch (error) {
     dispatch(outForDeliveryOrderFailure(error.message));
+  }
+};
+
+export const returnedOrder = (payload) => async (dispatch) => {
+  dispatch(returnedOrderRequest());
+
+  try {
+    const response = await api.put(
+      `/api/admin/orders/${payload.orderId}/return/approve`,
+      payload // send payload to backend if needed
+    );
+    const data = response.data;
+    console.log("returned order", data);
+    dispatch(returnedOrderSuccess(data));
+  } catch (error) {
+    dispatch(returnedOrderFailure(error.message));
   }
 };
