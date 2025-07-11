@@ -228,28 +228,30 @@ async function cancelledOrder(orderId) {
   return await order.save();
 }
 
-async function returnOrder(orderId,reason=""){
-const order  = await findOrderById(orderId)
-if(!order){
-  throw new Error("Order not Found with Id : " +orderId)
+
+async function returnOrder(orderId, reason = "", description = "", imageUrls = []) {
+  const order = await findOrderById(orderId);
+  if (!order) throw new Error("Order not found with ID: " + orderId);
+
+  if (order.orderStatus !== "DELIVERED") {
+    throw new Error("Only delivered orders can be returned.");
+  }
+
+  order.orderStatus = "RETURNED_REQUESTED";
+  order.statusUpdatedAt = new Date();
+  order.returnRequestedAt = new Date();
+
+  if (reason) order.returnReason = reason;
+  if (description) order.returnDescription = description;
+  if (imageUrls.length > 0) order.returnImages = imageUrls;
+
+  const updatedOrder = await order.save();
+  return updatedOrder;
 }
 
-if(order.orderStatus !== "DELIVERED"){
-  throw new Error("Only delivered order can be returned.")
-}
 
-order.orderStatus = "RETURNED_REQUESTED";
-order.statusUpdatedAt = new Date();
-order.returnRequestedAt = new Date();
-
-if(reason){
-  order.returnReason = reason;
-}
-const updatedOrder = await order.save()
-return updatedOrder;
-}
-
-async function approveReturnByAdmin(orderId, status, adminNote) {
+async function approveReturnByAdmin(orderId, status, adminNote, rejectionMessage, returnTime)
+ {
   const order = await findOrderById(orderId);
   if (!order) throw new Error("Order not Found with Id : " + orderId);
 
@@ -257,20 +259,24 @@ async function approveReturnByAdmin(orderId, status, adminNote) {
     throw new Error("Only requested returns can be handled.");
   }
 
-  if (status === "RETURN_APPROVED") {
-    order.orderStatus = "RETURNED";
-    order.returnApprovedAt = new Date();
-  } else if (status === "RETURN_REJECTED") {
-    order.orderStatus = "RETURN_REJECTED";
-    order.returnRejectedAt = new Date();
-  } else {
-    throw new Error("Invalid return status.");
-  }
+if (status === "RETURN_APPROVED") {
+  order.orderStatus = "RETURNED";
+  order.returnApprovedAt = new Date();
+   order.returnTime = returnTime;
+} else if (status === "RETURN_REJECTED") {
+  order.orderStatus = "RETURN_REJECTED";
+  order.returnRejectedAt = new Date();
+  order.rejectionMessage = rejectionMessage || ""; // ✅ Save it here
+} else {
+  throw new Error("Invalid return status.");
+}
+
 
   order.statusUpdatedAt = new Date();
 
   // 👇 Save this field
-  order.adminNote = adminNote;
+order.adminNote = adminNote;
+order.statusUpdatedAt = new Date();
 
   const updatedOrder = await order.save();
   return updatedOrder;

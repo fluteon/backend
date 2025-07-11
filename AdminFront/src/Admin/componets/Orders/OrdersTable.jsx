@@ -7,6 +7,7 @@ import {
   CardHeader,
   Chip,
   FormControl,
+  IconButton,
   InputLabel,
   Menu,
   MenuItem,
@@ -166,16 +167,21 @@ const handleSubmitReturnDecision = () => {
   const payload = {
     orderId: selectedOrder._id,
     status: isReturnAccepted ? "RETURN_APPROVED" : "RETURN_REJECTED",
-    adminNote: isReturnAccepted ? `Return in ${returnTime}` : returnMessage
+    adminNote: adminNotes.trim(), // ✅ Send full custom note
+    ...(isReturnAccepted && { returnTime }),
+    ...(!isReturnAccepted && { rejectionMessage: returnMessage }),
   };
 
   dispatch(returnedOrder(payload)).then(() => {
     dispatch(getOrders({ page }));
     setShowReturnModal(false);
-    setReturnMessage("");
     setReturnTime("");
+    setReturnMessage("");
+    setAdminNotes(""); // Clear notes
   });
 };
+
+const [adminNotes, setAdminNotes] = useState("");
 
 
   return (
@@ -376,90 +382,187 @@ const handleSubmitReturnDecision = () => {
 )}
 
 {showReturnModal && selectedOrder && (
-<motion.div
-  initial={{ opacity: 0, scale: 0.95 }}
-  animate={{ opacity: 1, scale: 1 }}
-  exit={{ opacity: 0, scale: 0.95 }}
-  transition={{ duration: 0.2 }}
-  className="relative backdrop-blur-md bg-white/30 text-black rounded-xl shadow-2xl"
-  style={{
-    position: "fixed",
-    top: "10%",
-    left: "30%",
-    transform: "translate(-50%, -50%)",
-    width: "95vw",
-    maxWidth: "800px",
-    maxHeight: "90vh",
-    overflowY: "auto",
-    padding: "24px",
-    zIndex: 9999,
-    borderRadius: "1rem",
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    backdropFilter: "blur(10px)",
-    WebkitBackdropFilter: "blur(10px)",
-  }}
->
-    <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md relative">
-      <button
-        className="absolute top-2 right-2 text-gray-500 hover:text-red-500"
-        onClick={() => setShowReturnModal(false)}
+  <motion.div
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    exit={{ opacity: 0, scale: 0.95 }}
+    transition={{ duration: 0.2 }}
+    style={{
+      position: "fixed",
+      top: "5%",
+      left: "25%",
+      transform: "translate(-50%, -10%)",
+      zIndex: 9999,
+    }}
+  >
+    <Box
+      sx={{
+        width: "95vw",
+        maxWidth: "800px",
+        maxHeight: "90vh",
+        overflowY: "auto",
+        p: 3,
+        borderRadius: 4,
+        backgroundColor: "rgba(255, 255, 255, 0.3)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+        boxShadow: 8,
+      }}
+    >
+      <Box
+        sx={{
+          backgroundColor: "#fff",
+          borderRadius: 3,
+          p: 3,
+          position: "relative",
+        }}
       >
-        <MdClose size={24} />
-      </button>
-
-      <h2 className="text-xl font-semibold mb-4">Handle Return Request</h2>
-
-      <p className="text-sm mb-2">
-        <strong>Reason from customer:</strong> {selectedOrder.returnReason}
-      </p>
-
-      <div className="mb-2">
-        <label className="block font-medium">Return Decision:</label>
-        <select
-          value={isReturnAccepted ? "accept" : "reject"}
-          onChange={(e) => setIsReturnAccepted(e.target.value === "accept")}
-          className="border p-2 w-full rounded mt-1"
-        >
-          <option value="accept">Accept</option>
-          <option value="reject">Reject</option>
-        </select>
-      </div>
-
-      <div className="mb-2">
-        <label className="block font-medium">
-          {isReturnAccepted ? "Return Processing Time (in days)" : "Rejection Message"}
-        </label>
-        <input
-          type="text"
-          placeholder={isReturnAccepted ? "e.g. 5 days" : "e.g. Not eligible for return"}
-          className="border p-2 w-full rounded mt-1"
-          value={isReturnAccepted ? returnTime : returnMessage}
-          onChange={(e) =>
-            isReturnAccepted
-              ? setReturnTime(e.target.value)
-              : setReturnMessage(e.target.value)
-          }
-        />
-      </div>
-
-      <div className="flex justify-end gap-2 mt-4">
-        <Button
-          variant="outlined"
+        <IconButton
           onClick={() => setShowReturnModal(false)}
+          sx={{ position: "absolute", top: 8, right: 8, color: "gray" }}
         >
-          Cancel
-        </Button>
-        <Button
-          variant="contained"
-          color={isReturnAccepted ? "success" : "error"}
-          onClick={() => handleSubmitReturnDecision()}
-        >
-          Submit
-        </Button>
-      </div>
-    </div>
+          <MdClose size={24} />
+        </IconButton>
+
+        <Typography variant="h6" sx={{ mb: 2, color: "black" }}>
+          Handle Return Request
+        </Typography>
+
+        {/* Reason */}
+        <Typography variant="body2" sx={{ mb: 1, color:"black" }}>
+          <strong>Reason from customer:</strong> {selectedOrder.returnReason}
+        </Typography>
+
+        {/* Description */}
+        <Typography variant="body2" sx={{ mb: 1, whiteSpace: "pre-wrap", color:"black" }}>
+          <strong>Description:</strong> {selectedOrder.returnDescription}
+        </Typography>
+
+        {/* Uploaded Images */}
+        {selectedOrder.returnImages && selectedOrder.returnImages.length > 0 && (
+          <Box sx={{ mb: 3 }}>
+            <Typography fontWeight="medium" sx={{ mb: 1, color:"black" }}>
+              Submitted Images:
+            </Typography>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "repeat(2, 1fr)",
+                  sm: "repeat(3, 1fr)",
+                },
+                gap: 1,
+              }}
+            >
+              {selectedOrder.returnImages.map((url, idx) => (
+                <Box
+                  key={idx}
+                  component="img"
+                  src={url}
+                  alt={`Return Img ${idx}`}
+                  sx={{
+                    width: "100%",
+                    height: 250,
+                    objectFit: "cover",
+                    borderRadius: 2,
+                    border: "1px solid #ccc",
+                    color:"black"
+                  }}
+                />
+              ))}
+            </Box>
+          </Box>
+        )}
+
+        {/* Decision */}
+        <Box sx={{ mb: 2 }}>
+          <Typography fontWeight="medium" sx={{ mb: 1 , color:"black"}}>
+            Return Decision:
+          </Typography>
+          <select
+            value={isReturnAccepted ? "accept" : "reject"}
+            onChange={(e) => setIsReturnAccepted(e.target.value === "accept")}
+            style={{
+              width: "100%",
+              padding: "8px",
+              borderRadius: "6px",
+              border: "1px solid #ccc",
+              color:"black"
+            }}
+          >
+            <option value="accept">Accept</option>
+            <option value="reject">Reject</option>
+          </select>
+        </Box>
+
+        {/* Time or Rejection Message */}
+        <Box sx={{ mb: 3, color:"black" }}>
+          <Typography fontWeight="medium" sx={{ mb: 1 }}>
+            {isReturnAccepted
+              ? "Return Processing Time (in days)"
+              : "Rejection Message"}
+          </Typography>
+          <input
+            type="text"
+            placeholder={
+              isReturnAccepted ? "e.g. 5 days" : "e.g. Not eligible for return"
+            }
+            value={isReturnAccepted ? returnTime : returnMessage}
+            onChange={(e) =>
+              isReturnAccepted
+                ? setReturnTime(e.target.value)
+                : setReturnMessage(e.target.value)
+            }
+            style={{
+              width: "100%",
+              padding: "10px",
+              borderRadius: "6px",
+              border: "1px solid #ccc",
+            }}
+          />
+        </Box>
+
+        {/* Admin Notes */}
+        <Box sx={{ mb: 3, color: "black" }}>
+          <Typography fontWeight="medium" sx={{ mb: 1 }}>
+            Admin Notes (optional)
+          </Typography>
+<textarea
+  rows={3}
+  placeholder="Any internal notes regarding this return..."
+  value={adminNotes} // ✅ Make sure this is correctly tied
+  onChange={(e) => setAdminNotes(e.target.value)} // ✅ No trimming or slicing
+  style={{
+    width: "100%",
+    padding: "10px",
+    borderRadius: "6px",
+    border: "1px solid #ccc",
+    resize: "none",
+  }}
+/>
+
+        </Box>
+
+        {/* Buttons */}
+        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+          <Button variant="outlined" onClick={() => setShowReturnModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color={isReturnAccepted ? "success" : "error"}
+            onClick={() => handleSubmitReturnDecision()}
+          >
+            Submit
+          </Button>
+        </Box>
+      </Box>
+    </Box>
   </motion.div>
 )}
+
+
+
 
           <Box>
       <Card className="p-3">
@@ -699,7 +802,8 @@ disabled={[
   "CANCELLED",
   "RETURNED_REQUESTED",
   "RETURN_APPROVED",
-  "RETURN_REJECTED"
+  "RETURN_REJECTED",
+  "RETURNED"
 ].includes(item.orderStatus?.toUpperCase())}
 
     >

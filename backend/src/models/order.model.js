@@ -72,9 +72,19 @@ const orderSchema = new Schema({
 returnReason: {
   type: String,
 },
+returnDescription: String,
+returnImages: [String],
 adminNote: {
   type: String,
 },
+returnTime:{
+  type:"String"
+},
+rejectionMessage: {
+  type: String,
+  default: "",
+},
+
 
   createdAt: {
     type: Date,

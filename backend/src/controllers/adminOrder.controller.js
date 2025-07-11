@@ -1,5 +1,7 @@
 
 const orderService = require("../services/order.service");
+const cloudinary = require("../config/cloudinary");
+
 
 // const getAllOrders = async (req, res) => {
 //   try {
@@ -89,9 +91,42 @@ const deleteOrder = (req, res) => {
 const returnOrder = async (req, res) => {
   try {
     const orderId = req.params.orderId;
-    const { reason } = req.body;
-    const order = await orderService.returnOrder(orderId, reason);
-    return res.status(202).send(order);
+    const { reason, description } = req.body;
+
+    let imageUrls = [];
+
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map((file) =>
+        cloudinary.uploader.upload_stream(
+          {
+            folder: "returns", // you can name this folder as needed
+            resource_type: "image",
+          },
+          (error, result) => {
+            if (error) throw error;
+            return result.secure_url;
+          }
+        )
+      );
+
+      // Or use `upload` with `file.buffer`
+      const results = await Promise.all(
+        req.files.map((file) =>
+          cloudinary.uploader.upload_stream_promise
+            ? cloudinary.uploader.upload_stream_promise({ folder: "returns" }, file.buffer)
+            : cloudinary.uploader.upload(`data:${file.mimetype};base64,${file.buffer.toString("base64")}`, {
+                folder: "returns",
+              })
+        )
+      );
+
+      imageUrls = results.map((res) => res.secure_url);
+    }
+
+    // Call service layer
+    const order = await orderService.returnOrder(orderId, reason, description, imageUrls);
+
+    return res.status(202).json(order);
   } catch (err) {
     console.error("Return Order Error:", err.message);
     res.status(500).json({ error: "Something went wrong" });
@@ -100,10 +135,17 @@ const returnOrder = async (req, res) => {
 
 const approveReturnOrder = async (req, res) => {
   try {
-    const { status, adminNote } = req.body;
+const { status, adminNote, rejectionMessage, returnTime } = req.body;
     const orderId = req.params.orderId;
 
-    const updatedOrder = await orderService.approveReturnByAdmin(orderId, status, adminNote);
+const updatedOrder = await orderService.approveReturnByAdmin(
+  orderId,
+  status,
+  adminNote,
+  rejectionMessage,
+  returnTime
+);
+
     return res.status(200).json(updatedOrder);
   } catch (err) {
     console.error("Approve Return Order Error:", err.message);
