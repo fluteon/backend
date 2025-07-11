@@ -1,7 +1,7 @@
 const Razorpay = require('razorpay');
-
-apiKey="rzp_test_SaVJ3xR8JmJyuF"
-apiSecret="GEXst0p50woTKsKevOqjDZlW"
+require("dotenv").config();
+apiKey=process.env.Razor_Pay_key_Id
+apiSecret=process.env.Razor_Pay_Secret_key
 
 const razorpay = new Razorpay({
     key_id: apiKey,
