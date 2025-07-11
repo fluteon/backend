@@ -38,8 +38,8 @@ const createPaymentLink = async (orderId) => {
         email: true,
       },
       reminder_enable: true,
-      // callback_url: `https://fluteon.com/payment/${orderId}`,
-       callback_url: `http://localhost:3001/payment/${orderId}`,
+      callback_url: `https://fluteon.com/payment/${orderId}`,
+      //  callback_url: `http://localhost:3001/payment/${orderId}`,
 
       callback_method: "get",
     };
