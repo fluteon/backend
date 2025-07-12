@@ -40,8 +40,6 @@ const ProductsTable = () => {
   });
 
 
-
-
   // query 
   const searchParams = new URLSearchParams(location.search);
   const availability = searchParams.get("availability");
@@ -86,6 +84,10 @@ const ProductsTable = () => {
     dispatch(deleteProduct(productId))
   }
 console.log("🛍️ All Products from Redux:", customersProduct);
+
+const handleUpdateProduct = (product)=>{
+  navigate("/product/create", {state:{product}})
+}
 
   return (
     <Box width={"100%"}>
@@ -171,6 +173,7 @@ console.log("🛍️ All Products from Redux:", customersProduct);
                 <TableCell sx={{ textAlign: "center" }}>Category</TableCell>
                 <TableCell sx={{ textAlign: "center" }}>Price</TableCell>
                 <TableCell sx={{ textAlign: "center" }}>Quantity</TableCell>
+                <TableCell sx={{ textAlign: "center "}}>Update</TableCell>
                 <TableCell sx={{ textAlign: "center" }}>Delete</TableCell>
               </TableRow>
             </TableHead>
@@ -205,7 +208,9 @@ console.log("🛍️ All Products from Redux:", customersProduct);
                   <TableCell sx={{ textAlign: "center" }}>{item.category.name}</TableCell>
                   <TableCell sx={{ textAlign: "center" }}>{item.discountedPrice}</TableCell>
                   <TableCell sx={{ textAlign: "center" }}>{item.quantity}</TableCell>
-              
+                  <TableCell sx={{ textAlign: "center"}}>
+                    <Button varient="text" onClick={()=>handleUpdateProduct(item)}> Update</Button>
+                  </TableCell>
                   <TableCell sx={{ textAlign: "center" }}>
                     <Button variant="text" onClick={()=>handleDeleteProduct(item._id)}>Delete</Button>
                   </TableCell>

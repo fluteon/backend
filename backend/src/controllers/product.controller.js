@@ -28,22 +28,16 @@ async function deleteProduct(req, res) {
 async function updateProduct(req, res) {
   try {
     const productId = req.params.id;
-    const product = await productService.updateProduct(productId, req.body);
+    const files = req.files?.images || []; // extract images array
+    const product = await productService.updateProduct(productId, req.body, files);
     return res.json(product);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 }
 
-// Get all products
-// async function getAllProducts(req, res) {
-//   try {
-//     const products = await productService.getAllProducts();
-//     res.json(products);
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// }
+
+
 
 // Find a product by ID
 async function findProductById(req, res) {
@@ -66,17 +60,6 @@ async function findProductByCategory(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
-
-// Search products by query
-// async function searchProduct(req, res) {
-//   try {
-//     const query = req.params.query;
-//     const products = await productService.searchProduct(query);
-//     res.json(products);
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// }
 
 // Get all products with filtering and pagination
 async function getAllProducts(req, res) {
