@@ -2,7 +2,6 @@ const cloudinary = require("../config/cloudinary"); // ✅ correct
 const Category = require("../models/category.model");
 const Product = require("../models/product.model");
 
-
 async function createProduct(req) {
   try {
     const reqData = req.body;
@@ -84,11 +83,111 @@ async function deleteProduct(productId) {
   return "Product deleted Successfully";
 }
 
-// Update a product by ID
-async function updateProduct(productId, reqData) {
-  const updatedProduct = await Product.findByIdAndUpdate(productId, reqData);
-  return updatedProduct;
+async function updateProduct(productId, reqData, files = []) {
+  try {
+    const product = await Product.findById(productId);
+    if (!product) throw new Error("Product not found");
+
+    // ✅ Fix: Ensure size is properly extracted and parsed
+    let sizes = [];
+    console.log("Received size in reqData:", reqData.size);
+
+    if (reqData.size) {
+      try {
+        const parsedSize = typeof reqData.size === "string"
+          ? JSON.parse(reqData.size)
+          : reqData.size;
+
+        if (!Array.isArray(parsedSize)) throw new Error("Size must be an array");
+
+        sizes = parsedSize.map(({ name, quantity }) => ({
+          name,
+          quantity: Number(quantity),
+        }));
+      } catch (err) {
+        throw new Error("Invalid size format");
+      }
+    } else {
+      throw new Error("Size data is required");
+    }
+
+    // ✅ Handle images
+    let imageUrls = product.imageUrl;
+    if (files.length > 0) {
+      const uploadResults = await Promise.all(
+        files.map((file) => {
+          const base64Image = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+          return cloudinary.uploader.upload(base64Image, {
+            folder: "ecommerce/products",
+          });
+        })
+      );
+      imageUrls = uploadResults.map((res) => res.secure_url);
+    }
+
+    // ✅ Category handling
+    let categoryId = product.category;
+    if (reqData.topLavelCategory && reqData.secondLavelCategory && reqData.thirdLavelCategory) {
+      const top = await Category.findOne({ name: reqData.topLavelCategory }) ||
+        await new Category({ name: reqData.topLavelCategory, level: 1 }).save();
+
+      const mid = await Category.findOne({
+        name: reqData.secondLavelCategory,
+        parentCategory: top._id,
+      }) || await new Category({
+        name: reqData.secondLavelCategory,
+        parentCategory: top._id,
+        level: 2,
+      }).save();
+
+      const bottom = await Category.findOne({
+        name: reqData.thirdLavelCategory,
+        parentCategory: mid._id,
+      }) || await new Category({
+        name: reqData.thirdLavelCategory,
+        parentCategory: mid._id,
+        level: 3,
+      }).save();
+
+      categoryId = bottom._id;
+    }
+
+    // ✅ Update product fields
+    product.set({
+      title: reqData.title?.trim(),
+      description: reqData.description?.trim(),
+      price: Number(reqData.price),
+      discountedPrice: Number(reqData.discountedPrice),
+      discountPersent: Number(reqData.discountPersent),
+      quantity: Number(reqData.quantity),
+      brand: reqData.brand?.trim(),
+color:
+  typeof reqData.color === "string"
+    ? reqData.color.startsWith("[")
+      ? JSON.parse(reqData.color)
+      : [reqData.color]
+    : reqData.color,
+      sizes,
+      imageUrl: imageUrls,
+      category: categoryId,
+    });
+
+    await product.save();
+    const updated = await Product.findById(productId).populate("category");
+
+    return updated;
+
+  } catch (error) {
+    console.error("Update Product Error:", error);
+    throw new Error(error.message || "Update failed");
+  }
 }
+
+
+
+
+
+
 
 // Find a product by ID
 async function findProductById(id) {
@@ -226,7 +325,6 @@ async function searchProducts(query) {
 
   return products;
 }
-
 
 module.exports = {
   createProduct,
