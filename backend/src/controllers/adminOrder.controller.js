@@ -3,11 +3,18 @@ const orderService = require("../services/order.service");
 const cloudinary = require("../config/cloudinary");
 
 
+
+
 // const getAllOrders = async (req, res) => {
 //   try {
-//     const orders = await orderService.getAllOrders();
-//     return res.status(202).send(orders);
+//     const page = parseInt(req.query.page) || 1;
+//     const pageSize = parseInt(req.query.pageSize) || 10;
+
+//     const result = await orderService.getAllOrders(page, pageSize);
+
+//     return res.status(200).send(result);
 //   } catch (error) {
+//     console.error("Admin Order Fetch Error:", error.message);
 //     res.status(500).send({ error: "Something went wrong" });
 //   }
 // };
@@ -16,8 +23,10 @@ const getAllOrders = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const pageSize = parseInt(req.query.pageSize) || 10;
+    const status = req.query.status || ""; // ✅ filter param
+    const sort = req.query.sort || "Newest"; // ✅ sort param
 
-    const result = await orderService.getAllOrders(page, pageSize);
+    const result = await orderService.getAllOrders(page, pageSize, status, sort);
 
     return res.status(200).send(result);
   } catch (error) {
@@ -25,6 +34,8 @@ const getAllOrders = async (req, res) => {
     res.status(500).send({ error: "Something went wrong" });
   }
 };
+
+
 
 
 const confirmedOrder = (req, res) => {

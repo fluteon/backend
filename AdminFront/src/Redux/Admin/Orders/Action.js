@@ -30,27 +30,32 @@ import {
   returnedOrderFailure,
 } from "./ActionCreator";
 
-// export const getOrders = (reqData) => {
-//   console.log("get all orders ", reqData);
+
+
+// export const getOrders = ({ page = 1, pageSize = 10 } = {}) => {
 //   return async (dispatch) => {
 //     dispatch(getOrdersRequest());
 //     try {
-     
-//       const response = await api.get(`/api/admin/orders/`);
-//       console.log("get all orders ", response.data);
+//       const response = await api.get(`/api/admin/orders?page=${page}&pageSize=${pageSize}`);
 //       dispatch(getOrdersSuccess(response.data));
 //     } catch (error) {
-//       console.log("catch error ", error);
 //       dispatch(getOrdersFailure(error.message));
 //     }
 //   };
 // };
 
-export const getOrders = ({ page = 1, pageSize = 10 } = {}) => {
+export const getOrders = ({ page = 1, pageSize = 10, status = "", sort = "Newest" } = {}) => {
   return async (dispatch) => {
     dispatch(getOrdersRequest());
     try {
-      const response = await api.get(`/api/admin/orders?page=${page}&pageSize=${pageSize}`);
+      const response = await api.get("/api/admin/orders", {
+        params: {
+          page,
+          pageSize,
+          status,
+          sort,
+        },
+      });
       dispatch(getOrdersSuccess(response.data));
     } catch (error) {
       dispatch(getOrdersFailure(error.message));

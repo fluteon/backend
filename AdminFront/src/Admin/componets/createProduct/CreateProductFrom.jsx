@@ -522,7 +522,7 @@
 
 
 
-import { useEffect, useState, Fragment } from "react";
+import React, { useEffect, useState, Fragment } from "react";
 import { Typography } from "@mui/material";
 import {
   Grid,
@@ -541,6 +541,12 @@ import { createProduct } from "../../../Redux/Customers/Product/Action";
 import api, { API_BASE_URL } from "../../../config/api";
 import { useLocation } from "react-router-dom";
 import { updateProduct } from "../../../Redux/Admin/Product/Action";
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
+
+const Alert = React.forwardRef(function Alert(props, ref) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
 const categoryHierarchy = {
   women: {
     bottom_wear: [
@@ -579,6 +585,8 @@ const categoryHierarchy = {
   },
 };
 
+
+
 const CreateProductForm = () => {
   const location = useLocation();
 const productToUpdate = location.state?.product;
@@ -587,6 +595,8 @@ const productToUpdate = location.state?.product;
   const [sizeChart, setSizeChart] = useState(null);
   const [images, setImages] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
+const [success, setSuccess] = useState(false);
+const [successMessage, setSuccessMessage] = useState("");
 
   const [productData, setProductData] = useState({
     images: "",
@@ -757,9 +767,40 @@ for (let key in productData) {
 if (isEditing) {
   formData.append("productId", productData._id); // ✅ Ensure this is added
 
-  dispatch(updateProduct(formData));
+  dispatch(updateProduct(formData))
+        .then(() => {
+        setSuccess(true); // ✅ Show success snackbar
+      })
+      .catch((err) => {
+        console.error("Update failed:", err);
+      });
 } else {
-  dispatch(createProduct({ data: formData, jwt }));
+  dispatch(createProduct({ data: formData, jwt }))
+        .then(() => {
+        // ✅ Clear form only after success
+        setProductData({
+          images: "",
+          brand: "",
+          title: "",
+          color: "",
+          discountedPrice: "",
+          price: "",
+          discountPersent: "",
+          size: [],
+          quantity: "",
+          topLavelCategory: "",
+          secondLavelCategory: "",
+          thirdLavelCategory: "",
+          description: "",
+        });
+        setImages([]);
+        setPreviewImages([]);
+        setSizeChart(null);
+        setSuccess(true); // ✅ Show snackbar
+      })
+      .catch(() => {
+        // handle error if needed
+      });
 }
 
 };
@@ -828,6 +869,18 @@ useEffect(() => {
 
   return (
     <Fragment className="createProductContainer">
+<Snackbar
+  open={success}
+  autoHideDuration={4000}
+  onClose={() => setSuccess(false)}
+  anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+>
+  <Alert onClose={() => setSuccess(false)} severity="success" sx={{ width: '100%' }}>
+    {successMessage}
+  </Alert>
+</Snackbar>
+
+
       <Typography
         variant="h3"
         sx={{ textAlign: "center" }}
@@ -1094,6 +1147,7 @@ useEffect(() => {
         </Grid>
       </form>
     </Fragment>
+    
   );
 };
 

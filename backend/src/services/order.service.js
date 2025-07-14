@@ -214,12 +214,56 @@ async function outForDelivery(orderId) {
 }
 
 
+// async function deliveredOrder(orderId) {
+//   const order = await findOrderById(orderId);
+//   order.orderStatus = "DELIVERED";
+//   order.statusUpdatedAt = new Date();
+//   return await order.save();
+// }
+
+const Product = require("../models/product.model"); // Make sure it's imported
+
 async function deliveredOrder(orderId) {
   const order = await findOrderById(orderId);
+  if (!order) throw new Error("Order not found");
+
   order.orderStatus = "DELIVERED";
   order.statusUpdatedAt = new Date();
-  return await order.save();
+
+  await order.save();
+
+  const lowStockAlerts = [];
+
+  for (const item of order.orderItems) {
+    const product = await Product.findById(item.product._id);
+    if (!product) continue;
+
+    const sizeToUpdate = product.sizes.find(s => s.name === item.size);
+    if (sizeToUpdate) {
+      sizeToUpdate.quantity -= item.quantity;
+      if (sizeToUpdate.quantity < 0) sizeToUpdate.quantity = 0;
+
+      // If quantity falls below 2, track alert
+      if (sizeToUpdate.quantity < 2) {
+        lowStockAlerts.push({
+          productId: product._id,
+          title: product.title,
+          size: sizeToUpdate.name,
+          remaining: sizeToUpdate.quantity,
+        });
+      }
+    }
+
+    await product.save();
+  }
+
+  // Optional: Return low stock info to caller
+  return {
+    message: "Order marked as delivered",
+    lowStockAlerts,
+  };
 }
+
 
 async function cancelledOrder(orderId) {
   const order = await findOrderById(orderId);
@@ -329,47 +373,50 @@ const usersOrderHistory = async (userId) => {
   return orders;
 };
 
-// async function getAllOrders() {
-//   return await Order.find()
+
+// async function getAllOrders(page = 1, pageSize = 10) {
+//   const skip = (page - 1) * pageSize;
+
+//   const query = Order.find({ "paymentDetails.paymentStatus": "COMPLETED" })
 //     .populate("user")
 //     .populate("shippingAddress")
 //     .populate({
 //       path: "orderItems",
-//       populate: {
-//         path: "product",
-//       },
+//       populate: { path: "product" },
 //     })
-//     .lean();
+//     .sort({ createdAt: -1 });
+
+//   const totalOrders = await Order.countDocuments({ "paymentDetails.paymentStatus": "COMPLETED" });
+//   const totalPages = Math.ceil(totalOrders / pageSize);
+
+//   const orders = await query.skip(skip).limit(pageSize).lean();
+
+//   return {
+//     content: orders,
+//     currentPage: page,
+//     totalPages,
+//     totalOrders,
+//   };
 // }
 
-// async function getAllOrders() {
-//   return await Order.find({ "paymentDetails.paymentStatus": "COMPLETED" }) // ✅ only paid orders
-//     .populate("user")
-//     .populate("shippingAddress")
-//     .populate({
-//       path: "orderItems",
-//       populate: {
-//         path: "product",
-//       },
-//     })
-//     .sort({ createdAt: -1 }) // optional: newest first
-//     .lean();
-// }
-
-
-async function getAllOrders(page = 1, pageSize = 10) {
+async function getAllOrders(page = 1, pageSize = 10, status = "", sort = "Newest") {
   const skip = (page - 1) * pageSize;
 
-  const query = Order.find({ "paymentDetails.paymentStatus": "COMPLETED" })
+  const filter = { "paymentDetails.paymentStatus": "COMPLETED" };
+  if (status) filter.orderStatus = status;
+
+  const sortOption = sort === "Oldest" ? { createdAt: 1 } : { createdAt: -1 };
+
+  const query = Order.find(filter)
     .populate("user")
     .populate("shippingAddress")
     .populate({
       path: "orderItems",
       populate: { path: "product" },
     })
-    .sort({ createdAt: -1 });
+    .sort(sortOption);
 
-  const totalOrders = await Order.countDocuments({ "paymentDetails.paymentStatus": "COMPLETED" });
+  const totalOrders = await Order.countDocuments(filter);
   const totalPages = Math.ceil(totalOrders / pageSize);
 
   const orders = await query.skip(skip).limit(pageSize).lean();

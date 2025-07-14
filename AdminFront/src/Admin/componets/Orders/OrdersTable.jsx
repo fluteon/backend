@@ -48,36 +48,30 @@ const OrdersTable = () => {
   const [formData, setFormData] = useState({ status: "", sort: "" });
   const [orderStatus, setOrderStatus] = useState("");
   const [paymentHistory, setPaymentHistory] = useState([]);
-const { history, loading, error } = useSelector((store) => store.payment); // from your combined reducer
+   const dispatch = useDispatch();
+  const { history, loading, error } = useSelector((store) => store.payment); // from your combined reducer
 
-const [showPaymentModal, setShowPaymentModal] = useState(false);
-
-const handleViewPaymentHistory = (userId,orderId) => {
-  dispatch(getPaymentHistory(userId, orderId)); // Redux action
-  setShowPaymentModal(true); // Open modal
-};
-
-  const dispatch = useDispatch();
-  // const jwt = localStorage.getItem("jwt");
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const { adminsOrder } = useSelector((store) => store);
   const { orders, totalPages, currentPage } = adminsOrder
   const [page, setPage] = useState(1);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [anchorElArray, setAnchorElArray] = useState([]);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnMessage, setReturnMessage] = useState("");
+  const [returnTime, setReturnTime] = useState(""); // In days
+  const [isReturnAccepted, setIsReturnAccepted] = useState(true);
+  const [adminNotes, setAdminNotes] = useState("");
 
-
-
-function handlePaginationChange(event, value) {
+  const handleViewPaymentHistory = (userId,orderId) => {
+  dispatch(getPaymentHistory(userId, orderId)); // Redux action
+  setShowPaymentModal(true); // Open modal
+};
+ 
+  function handlePaginationChange(event, value) {
   setPage(value);
 }
-
-
-  const [anchorElArray, setAnchorElArray] = useState([]);
-  console.log("admin details",adminsOrder)
-
-
-const [selectedOrder, setSelectedOrder] = useState(null);
-
-const [showOrderModal, setShowOrderModal] = useState(false);
-
 
 const handleOpenOrderModal = (order) => {
   setSelectedOrder(order);
@@ -89,10 +83,25 @@ const handleCloseModal = () => {
   setShowOrderModal(false); // close modal
 };
 
-
 useEffect(() => {
-  dispatch(getOrders({ page }));
-}, [page, adminsOrder.delivered, adminsOrder.shipped, adminsOrder.confirmed, adminsOrder.returned,]);
+  dispatch(
+    getOrders({
+      page,
+      pageSize: 10,
+      status: formData.status,
+      sort: formData.sort,
+    })
+  );
+}, [
+  page,
+  formData.status,
+  formData.sort,
+  adminsOrder.delivered,
+  adminsOrder.shipped,
+  adminsOrder.confirmed,
+  adminsOrder.returned,
+]);
+
 
 
   const handleUpdateStatusMenuClick = (event, index) => {
@@ -125,8 +134,6 @@ const handleOutForDeliveryOrder = (orderId, index) => {
   dispatch(outForDeliveryOrder(orderId));
   setOrderStatus("OUTFORDELIVERY");
 };
-
-
   const handleDeliveredOrder = (orderId,index) => {
     handleUpdateStatusMenuClose(index);
     dispatch(deliveredOrder(orderId))
@@ -148,15 +155,6 @@ useEffect(() => {
   return () => (document.body.style.overflow = 'auto');
 }, [selectedOrder, showPaymentModal]);
 
-console.log("Selected Order:", selectedOrder);
-console.log("Show Payment Modal:", showPaymentModal);
-console.log("Payment History:", history);
-
-
-const [showReturnModal, setShowReturnModal] = useState(false);
-const [returnMessage, setReturnMessage] = useState("");
-const [returnTime, setReturnTime] = useState(""); // In days
-const [isReturnAccepted, setIsReturnAccepted] = useState(true);
 
 const handleOpenReturnModal = (order) => {
   setSelectedOrder(order);
@@ -180,9 +178,6 @@ const handleSubmitReturnDecision = () => {
     setAdminNotes(""); // Clear notes
   });
 };
-
-const [adminNotes, setAdminNotes] = useState("");
-
 
   return (
 <>
@@ -562,52 +557,47 @@ const [adminNotes, setAdminNotes] = useState("");
 )}
 
 
-
-
           <Box>
       <Card className="p-3">
-        <CardHeader
-          title="Sort"
-          sx={{
-            pt: 0,
-            alignItems: "center",
-            "& .MuiCardHeader-action": { mt: 0.6 },
-          }}
-        />
         <Grid container spacing={2}>
           <Grid item xs={4}>
-            <FormControl fullWidth>
-              <InputLabel id="demo-simple-select-label">Status</InputLabel>
-              <Select
-                labelId="demo-simple-select-label"
-                id="demo-simple-select"
-                value={formData.status}
-                label="Status"
-                onChange={handleChange}
-              >
-                <MenuItem value={"PLACED"}>PLACED</MenuItem>
-                <MenuItem value={"CONFIRMED"}>CONFIRMED</MenuItem>
-                <MenuItem value={"DELIVERED"}>DELIVERED</MenuItem>
-                <MenuItem value={"CANCELD"}>CANCLED</MenuItem>
-                <MenuItem value={"OUT FOR DELIVERY"}>OUT FOR DELIVERY</MenuItem>
+<FormControl fullWidth>
+  <InputLabel id="status-label">Status</InputLabel>
+  <Select
+    labelId="status-label"
+    id="status-select"
+    name="status"
+    value={formData.status}
+    label="Status"
+    onChange={handleChange}
+  >
+    <MenuItem value={"PLACED"}>Placed</MenuItem>
+    <MenuItem value={"CONFIRMED"}>Confirmed</MenuItem>
+    <MenuItem value={"SHIPPED"}>Shipped</MenuItem>
+    <MenuItem value={"OUTFORDELIVERY"}>Out For Delivery</MenuItem>
+    <MenuItem value={"DELIVERED"}>Delivered</MenuItem>
+    <MenuItem value={"CANCELLED"}>Cancelled</MenuItem>
+    <MenuItem value={""}>All</MenuItem> {/* Optional reset */}
+  </Select>
+</FormControl>
 
-              </Select>
-            </FormControl>
           </Grid>
           <Grid item xs={4}>
-            <FormControl fullWidth>
-              <InputLabel id="demo-simple-select-label">Sort By</InputLabel>
-              <Select
-                labelId="demo-simple-select-label"
-                id="demo-simple-select"
-                value={formData.sort}
-                label="Sort By"
-                onChange={handleChange}
-              >
-                <MenuItem value={"Newest"}>Newest</MenuItem>
-                <MenuItem value={"Older"}>Older</MenuItem>
-              </Select>
-            </FormControl>
+<FormControl fullWidth>
+  <InputLabel id="sort-label">Sort By</InputLabel>
+  <Select
+    labelId="sort-label"
+    id="sort-select"
+    name="sort"
+    value={formData.sort}
+    label="Sort By"
+    onChange={handleChange}
+  >
+    <MenuItem value={"Newest"}>Newest</MenuItem>
+    <MenuItem value={"Oldest"}>Oldest</MenuItem>
+  </Select>
+</FormControl>
+
           </Grid>
         </Grid>
       </Card>

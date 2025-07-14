@@ -26,6 +26,9 @@ import { useState } from "react";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { deleteProduct, findProducts } from "../../../Redux/Customers/Product/Action";
+import Tooltip from "@mui/material/Tooltip";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import LowStockModal from "../Orders/LowStockModal";
 
 const ProductsTable = () => {
   const baseUrl = process.env.REACT_APP_API_BASE_URL
@@ -88,6 +91,15 @@ console.log("🛍️ All Products from Redux:", customersProduct);
 const handleUpdateProduct = (product)=>{
   navigate("/product/create", {state:{product}})
 }
+
+const [openModalSizes, setOpenModalSizes] = useState([]);
+const [isModalOpen, setIsModalOpen] = useState(false);
+
+const handleOpenModal = (sizes) => {
+  setOpenModalSizes(sizes);
+  setIsModalOpen(true);
+};
+
 
   return (
     <Box width={"100%"}>
@@ -179,12 +191,24 @@ const handleUpdateProduct = (product)=>{
             </TableHead>
             <TableBody>
               {customersProduct?.products?.content?.map((item) => (
-                <TableRow
-                  hover
-                  key={item.name}
-                  sx={{ "&:last-of-type td, &:last-of-type th": { border: 0 } }}
-                  
-                >
+<TableRow
+  hover
+  key={item.name}
+  sx={{
+    backgroundColor: item.sizes?.some(size => size.quantity < 2)
+      ? "#fff3cd" // light warning yellow
+      : "inherit",
+    color: item.sizes?.some(size => size.quantity < 2)
+      ? "#000" // black text for warning rows
+      : "inherit",
+    "& td": {
+      color: item.sizes?.some(size => size.quantity < 2) ? "#000" : "inherit",
+    },
+    "&:last-of-type td, &:last-of-type th": { border: 0 },
+  }}
+>
+
+
                   <TableCell>
                     {" "}
                     <Avatar alt={item.titel} src={item.imageUrl?.[0]} />{" "}
@@ -207,7 +231,21 @@ const handleUpdateProduct = (product)=>{
                   </TableCell>
                   <TableCell sx={{ textAlign: "center" }}>{item.category.name}</TableCell>
                   <TableCell sx={{ textAlign: "center" }}>{item.discountedPrice}</TableCell>
-                  <TableCell sx={{ textAlign: "center" }}>{item.quantity}</TableCell>
+                  {/* <TableCell sx={{ textAlign: "center" }}>{item.quantity}</TableCell> */}
+<TableCell sx={{ textAlign: "center" }}>
+  {item.quantity}
+  {item.sizes?.some((size) => size.quantity < 2) && (
+    <Tooltip title="Click to view low stock sizes">
+      <WarningAmberIcon
+        color="warning"
+        sx={{ ml: 1, fontSize: 20, cursor: "pointer" }}
+        onClick={() => handleOpenModal(item.sizes)}
+      />
+    </Tooltip>
+  )}
+</TableCell>
+
+
                   <TableCell sx={{ textAlign: "center"}}>
                     <Button varient="text" onClick={()=>handleUpdateProduct(item)}> Update</Button>
                   </TableCell>
@@ -239,6 +277,12 @@ const handleUpdateProduct = (product)=>{
           />
         </div>
       </Card>
+      <LowStockModal
+  open={isModalOpen}
+  onClose={() => setIsModalOpen(false)}
+  sizes={openModalSizes}
+/>
+
     </Box>
   );
 };
