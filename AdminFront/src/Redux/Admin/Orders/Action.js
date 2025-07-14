@@ -28,6 +28,9 @@ import {
     returnedOrderRequest,
   returnedOrderSuccess,
   returnedOrderFailure,
+  dashboardOverviewRequest,
+  dashboardOverviewSuccess,
+  dashboardOverviewFailure,
 } from "./ActionCreator";
 
 
@@ -177,5 +180,19 @@ export const returnedOrder = (payload) => async (dispatch) => {
     dispatch(returnedOrderSuccess(data));
   } catch (error) {
     dispatch(returnedOrderFailure(error.message));
+  }
+};
+
+export const fetchDashboardOverview = () => async (dispatch) => {
+  dispatch(dashboardOverviewRequest());
+
+  try {
+    const response = await api.get("/api/admin/orders/overview"); // No JWT needed
+    const data = response.data?.data || {};
+    console.log("📊 Dashboard overview data:", data);
+    dispatch(dashboardOverviewSuccess(data));
+  } catch (error) {
+    console.error("❌ Dashboard fetch error:", error.message);
+    dispatch(dashboardOverviewFailure(error.message));
   }
 };

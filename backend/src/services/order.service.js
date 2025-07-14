@@ -437,6 +437,134 @@ async function deleteOrder(orderId) {
   await Order.findByIdAndDelete(orderId);
 }
 
+
+async function getAdminDashboardOverview() {
+  const customerCount = await mongoose.model("users").countDocuments();
+  const productCount = await Product.countDocuments();
+const recentUsers = await mongoose
+  .model("users")
+  .find({})
+  .sort({ createdAt: -1 }) // Most recent first
+  .limit(5)
+  .select("name email image createdAt"); // Select only required fields
+
+
+  const recentOrders = await Order.find()
+  .sort({ createdAt: -1 })
+  .limit(10)
+  .populate("orderItems.product", "title imageUrl brand") // adjust fields based on your schema
+  .select("totalDiscountedPrice orderStatus orderId orderItems createdAt"); // optional: pick fields
+
+  const totalRevenueAgg = await Order.aggregate([
+    { $match: { "paymentDetails.paymentStatus": "COMPLETED" } },
+    {
+      $group: {
+        _id: null,
+        totalRevenue: { $sum: "$totalDiscountedPrice" },
+        totalOrders: { $sum: 1 },
+        totalProfit: { $sum: { $subtract: ["$totalDiscountedPrice", "$discounte"] } },
+      },
+    },
+  ]);
+
+  const revenueData = totalRevenueAgg[0] || {
+    totalRevenue: 0,
+    totalOrders: 0,
+    totalProfit: 0,
+  };
+
+  const refundCount = await Order.countDocuments({
+    orderStatus: "CANCELLED",
+  });
+
+  const recentWeekOrders = await Order.find({
+    createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+    "paymentDetails.paymentStatus": "COMPLETED",
+  });
+
+  // ========== 📊 Weekly Sales ==========
+  const weeklySalesRaw = await Order.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        "paymentDetails.paymentStatus": "COMPLETED",
+      },
+    },
+    {
+      $group: {
+        _id: { $dayOfWeek: "$createdAt" },
+        total: { $sum: "$totalDiscountedPrice" },
+      },
+    },
+    { $sort: { _id: 1 } }
+  ]);
+
+  const weeklySales = Array(7).fill(0);
+  weeklySalesRaw.forEach(day => {
+    const index = day._id - 1; // MongoDB: 1=Sunday ... 7=Saturday
+    weeklySales[index] = day.total;
+  });
+
+  // ========== 📆 Monthly Sales (last 30 days split by week) ==========
+  const monthlySalesRaw = await Order.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+        "paymentDetails.paymentStatus": "COMPLETED",
+      },
+    },
+    {
+      $group: {
+        _id: { $week: "$createdAt" },
+        total: { $sum: "$totalDiscountedPrice" },
+      },
+    },
+    { $sort: { _id: 1 } }
+  ]);
+
+  const monthlySales = monthlySalesRaw.map(entry => entry.total);
+
+  // ========== 📅 Yearly Sales (by month) ==========
+  const yearlySalesRaw = await Order.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: new Date(new Date().getFullYear(), 0, 1) },
+        "paymentDetails.paymentStatus": "COMPLETED",
+      },
+    },
+    {
+      $group: {
+        _id: { $month: "$createdAt" },
+        total: { $sum: "$totalDiscountedPrice" },
+      },
+    },
+    { $sort: { _id: 1 } }
+  ]);
+
+  const yearlySales = Array(12).fill(0);
+  yearlySalesRaw.forEach(month => {
+    yearlySales[month._id - 1] = month.total;
+  });
+
+  return {
+    totalRevenue: revenueData.totalRevenue,
+    totalProfit: revenueData.totalProfit,
+    totalOrders: revenueData.totalOrders,
+    refundCount,
+    productCount,
+    customerCount,
+    newOrdersLast7Days: recentWeekOrders.length,
+    weeklySales,
+    monthlySales,
+    yearlySales,
+    recentUsers,
+    recentOrders,
+  };
+}
+
+
+
+
 module.exports = {
   createOrder,
   placedOrder,
@@ -450,5 +578,7 @@ module.exports = {
   deleteOrder,
   outForDelivery,
   returnOrder,
-  approveReturnByAdmin
+  approveReturnByAdmin,
+  getAdminDashboardOverview
 };
+

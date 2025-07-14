@@ -23,7 +23,7 @@ const TrophyImg = styled('img')({
 
 
 
-const Achivement = () => {
+const Achivement = ({sales}) => {
   // ** Hook
   const theme = useTheme()
 
@@ -34,12 +34,12 @@ const Achivement = () => {
        <Card sx={{ position: 'relative' }}>
       <CardContent>
       <Typography variant='h6' sx={{ letterSpacing: '0.25px' }}>
-          Shop With Zosh
+          Fluteon
         </Typography>
         <Typography variant='body2' >Congratulations 🥳</Typography>
         
         <Typography variant='h5' sx={{ my: 3.1, color: 'primary.main' }}>
-          420.8k
+         {sales ? `${sales.toLocaleString()} INR` : "Loading..."}
         </Typography>
         <Button size='small' variant='contained'>
           View Sales

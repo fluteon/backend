@@ -12,4 +12,5 @@ router.delete("/:orderId/delete",adminOrderController.deleteOrder);
 router.put("/:orderId/out-for-delivery",adminOrderController.outForDelivery);
 router.put("/:orderId/return/approve", adminOrderController.approveReturnOrder)
 
+router.get("/overview", adminOrderController.getAdminDashboardOverview);
 module.exports=router;

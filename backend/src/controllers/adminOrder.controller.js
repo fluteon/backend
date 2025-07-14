@@ -164,7 +164,15 @@ const updatedOrder = await orderService.approveReturnByAdmin(
   }
 };
 
-
+const getAdminDashboardOverview = async (req, res) => {
+  try {
+    const overview = await orderService.getAdminDashboardOverview();
+    return res.status(200).json({ success: true, data: overview });
+  } catch (error) {
+    console.error("📉 Error getting dashboard overview:", error.message);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 module.exports = {
   getAllOrders,
@@ -175,5 +183,6 @@ module.exports = {
   deleteOrder,
   outForDelivery,
   returnOrder,
-  approveReturnOrder
+  approveReturnOrder,
+  getAdminDashboardOverview
 };

@@ -26,11 +26,15 @@ import {
     RETURNED_ORDER_REQUEST,
   RETURNED_ORDER_SUCCESS,
   RETURNED_ORDER_FAILURE,
+    DASHBOARD_OVERVIEW_REQUEST,
+  DASHBOARD_OVERVIEW_SUCCESS,
+  DASHBOARD_OVERVIEW_FAILURE,
 } from "./ActionType";
 
 const initialState = {
   loading: false,
   orders: [],
+  overview: {},
   currentPage: 1,
   totalPages: 1,
   error: "",
@@ -160,6 +164,14 @@ case OUT_FOR_DELIVERY_ORDER_FAILURE:
       };
 
     case RETURNED_ORDER_FAILURE:
+      return { ...state, loading: false, error: action.payload };
+          case DASHBOARD_OVERVIEW_REQUEST:
+      return { ...state, loading: true, error: null };
+
+    case DASHBOARD_OVERVIEW_SUCCESS:
+      return { ...state, loading: false, overview: action.payload };
+
+    case DASHBOARD_OVERVIEW_FAILURE:
       return { ...state, loading: false, error: action.payload };
     default:
       return state;
