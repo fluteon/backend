@@ -51,14 +51,20 @@ const ProductsTable = () => {
   const page = searchParams.get("page");
 
 
-  const handlePaginationChange = (event, value) => {
-    searchParams.set("page", value-1);
-    const query = searchParams.toString();
-    navigate({ search: `?${query}` });
-  };
+const handlePaginationChange = (event, value) => {
+  searchParams.set("page", value); // ✅ Use 1-based value for consistency
+  const query = searchParams.toString();
+  navigate({ search: `?${query}` });
+};
+
 
   useEffect(() => {
     // setFilterValue({ availability, category, sort });
+      setFilterValue({
+    availability: availability || "",
+    category: category || "",
+    sort: sort || "price_low",
+  });
     const data = {
       category:category || "",
       colors: [],
@@ -67,20 +73,22 @@ const ProductsTable = () => {
       maxPrice: 100000,
       minDiscount: 0,
       sort: sort || "price_low",
-      pageNumber:page || 1,
+      pageNumber: parseInt(page || 1),
       pageSize: 10,
       stock: availability,
     };
     dispatch(findProducts(data));
   }, [availability, category, sort,page,customersProduct.deleteProduct]);
 
-  const handleFilterChange = (e, sectionId) => {
-    console.log(e.target.value, sectionId);
-    setFilterValue((values) => ({ ...values, [sectionId]: e.target.value }));
-    searchParams.set(sectionId, e.target.value);
-    const query = searchParams.toString();
-    navigate({ search: `?${query}` });
-  };
+const handleFilterChange = (e, sectionId) => {
+  const newValue = e.target.value;
+  setFilterValue((values) => ({ ...values, [sectionId]: newValue }));
+  searchParams.set(sectionId, newValue);
+  searchParams.set("page", 1); // reset to page 1
+  const query = searchParams.toString();
+  navigate({ search: `?${query}` });
+};
+
 
   const handleDeleteProduct=(productId)=>{
     console.log("delete product ",productId)
@@ -123,8 +131,10 @@ const handleOpenModal = (sizes) => {
                 label="Category"
                 onChange={(e) => handleFilterChange(e, "category")}
               >
-                <MenuItem value={"pant"}>Men's Pants</MenuItem>
-                <MenuItem value={"mens_kurta"}>Men's Kurta</MenuItem>
+                <MenuItem value={"blazer"}>Blazer</MenuItem>
+                <MenuItem value={"blazers_sets"}>Blazer Sets</MenuItem>
+                <MenuItem value={"cotton_pants"}>Cotton Pants</MenuItem>
+                <MenuItem value={"formal_pants"}>Formal Pants</MenuItem>
                 <MenuItem value={"saree"}>Saree</MenuItem>
                 <MenuItem value={"lengha_choli"}>Lengha Choli</MenuItem>
               </Select>
