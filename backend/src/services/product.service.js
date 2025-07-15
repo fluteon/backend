@@ -217,12 +217,39 @@ async function getAllProducts(reqQuery) {
   let query = Product.find().populate("category");
 
 
-  if (category) {
-    const existCategory = await Category.findOne({ name: category });
-    if (existCategory)
-      query = query.where("category").equals(existCategory._id);
-    else return { content: [], currentPage: 1, totalPages:1 };
+  // if (category) {
+  //   const existCategory = await Category.findOne({ name: category });
+  //   if (existCategory)
+  //     query = query.where("category").equals(existCategory._id);
+  //   else return { content: [], currentPage: 1, totalPages:1 };
+  // }
+
+if (category) {
+  const existCategory = await Category.findOne({ name: category });
+
+  if (!existCategory) {
+    return { content: [], currentPage: 1, totalPages: 1 };
   }
+
+  const allCategoryIds = new Set([existCategory._id.toString()]);
+
+  // Recursively collect children (like you do in searchProducts)
+  async function getChildrenRecursive(parentIds) {
+    const children = await Category.find({ parentCategory: { $in: parentIds } });
+    for (const child of children) {
+      allCategoryIds.add(child._id.toString());
+    }
+    if (children.length > 0) {
+      await getChildrenRecursive(children.map((c) => c._id));
+    }
+  }
+
+  await getChildrenRecursive([existCategory._id]);
+
+  // Filter products in any of those categories
+  query = query.where("category").in([...allCategoryIds]);
+}
+
 
   if (color) {
     const colorSet = new Set(color.split(",").map(color => color.trim().toLowerCase()));
