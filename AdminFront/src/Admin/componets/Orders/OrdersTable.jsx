@@ -240,14 +240,19 @@ const handleSubmitReturnDecision = () => {
       </div>
       <hr className="my-4" />
       {/* Shipping Info */}
-      <h3 className="text-lg font-semibold">Shipping Address</h3>
-      <p>
-        {selectedOrder.shippingAddress.firstName} {selectedOrder.shippingAddress.lastName},<br />
-        {selectedOrder.shippingAddress.mobile},<br />
-        {selectedOrder.shippingAddress.streetAddress},<br />
-        {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state},<br />
-        Pincode: {selectedOrder.shippingAddress.zipCode}
-      </p>
+<h3 className="text-lg font-semibold">Shipping Address</h3>
+{selectedOrder?.shippingAddress ? (
+  <p>
+    {selectedOrder.shippingAddress.firstName} {selectedOrder.shippingAddress.lastName},<br />
+    {selectedOrder.shippingAddress.mobile},<br />
+    {selectedOrder.shippingAddress.streetAddress},<br />
+    {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state},<br />
+    Pincode: {selectedOrder.shippingAddress.zipCode}
+  </p>
+) : (
+  <p className="text-red-600 font-medium">No shipping address available.</p>
+)}
+
       <hr className="my-4" />
       {/* User Info */}
       <h3 className="text-lg font-semibold">Customer</h3>
