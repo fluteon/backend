@@ -4,12 +4,9 @@ const User = require("../models/user.model.js");
 const orderService=require("../services/order.service.js");
 const mongoose = require("mongoose")
 
-const createPaymentLink = async (orderId) => {
+const createPaymentLink = async (orderId, usedSuperCoins = 0) => {
   try {
-       console.log("Searching for Order with ID:", orderId);
-    console.log("Is valid ObjectId?", mongoose.Types.ObjectId.isValid(orderId));
     const order = await orderService.findOrderById(orderId);
-
     if (!order) {
       throw new Error("Order not found");
     }
@@ -25,8 +22,17 @@ const createPaymentLink = async (orderId) => {
       throw new Error("User not found for this order");
     }
 
+    // 🪙 Super Coin Calculation
+    const discountFromCoins = usedSuperCoins * 1; // ₹1 per coin
+    const finalAmount = Math.max(order.totalDiscountedPrice - discountFromCoins, 0);
+
+    // 💾 Save usedSuperCoins in the order
+    order.usedSuperCoins = usedSuperCoins;
+    await order.save();
+
+    // 💳 Razorpay Payment Link Creation
     const paymentLinkRequest = {
-      amount: order.totalDiscountedPrice * 100,
+      amount: finalAmount * 100, // Razorpay expects amount in paisa
       currency: "INR",
       customer: {
         name: user.firstName + " " + user.lastName,
@@ -38,9 +44,8 @@ const createPaymentLink = async (orderId) => {
         email: true,
       },
       reminder_enable: true,
-      callback_url: `https://fluteon.com/payment/${orderId}`,
-      //  callback_url: `http://localhost:3001/payment/${orderId}`,
-
+      // callback_url: `https://fluteon.com/payment/${orderId}`,
+      callback_url: `http://localhost:3001/payment/${orderId}`,
       callback_method: "get",
     };
 
@@ -56,80 +61,6 @@ const createPaymentLink = async (orderId) => {
   }
 };
 
-
-// const updatePaymentInformation = async (reqData) => {
-//   const paymentId = reqData.payment_id;
-//   const orderId = reqData.order_id;
-
-//   try {
-//     const order = await orderService.findOrderById(orderId);
-//     if (!order) throw new Error("Order not found");
-
-//     const payment = await razorpay.payments.fetch(paymentId);
-
-//     if (payment.status === "captured") {
-//       // ✅ Check if a payment already exists for this order
-//       const existingPayment = await PaymentInformation.findOne({ order: order._id });
-//       if (existingPayment) {
-//         console.log("Payment info already exists for this order");
-//         return {
-//           message: "Payment info already recorded",
-//           orderId: order._id,
-//           paymentId: existingPayment._id,
-//         };
-//       }
-
-//       // Update order
-//       order.paymentDetails.paymentId = paymentId;
-//       order.paymentDetails.paymentStatus = "COMPLETED";
-//       order.paymentDetails.paymentMethod = payment.method;
-//       order.paymentDetails.transactionId = payment.acquirer_data?.bank_transaction_id || "";
-//       order.orderStatus = "PLACED";
-
-//       // await order.save();
-// await orderService.placedOrder(orderId);
-//       // Create new payment record
-//       const user = await User.findById(order.user);
-//       const paymentInfo = new PaymentInformation({
-//         user: user._id,
-//         userSnapshot: {
-//           firstName: user.firstName,
-//           lastName: user.lastName,
-//           email: user.email,
-//           mobile: user.mobile,
-//         },
-//         order: order._id,
-//         paymentId,
-//         status: "COMPLETED",
-//         amount: payment.amount / 100,
-//         paidAt: new Date(),
-//       });
-
-//       await paymentInfo.save();
-
-//       // Update user with payment ref
-//       user.paymentInformation.push(paymentInfo._id);
-//       await user.save();
-
-//       return {
-//         message: "Order placed & payment recorded",
-//         orderId: order._id,
-//         paymentId: paymentInfo._id,
-//       };
-//     } else {
-//       throw new Error("Payment not captured");
-//     }
-//   } catch (error) {
-//     console.error("Error in updatePaymentInformation:", error);
-//     throw new Error(error.message);
-//   }
-// };
-
-
-
-// ✅ services/payment.service.js
-
-
 // by gpt
 const updatePaymentInformation = async (reqData) => {
   const paymentId = reqData.payment_id;
@@ -139,14 +70,12 @@ const updatePaymentInformation = async (reqData) => {
     const order = await orderService.findOrderById(orderId);
     if (!order) throw new Error("Order not found");
 
-    // Fetch payment from Razorpay
     const payment = await razorpay.payments.fetch(paymentId);
 
     if (payment.status === "captured") {
-      // ✅ Check if a payment already exists for this order
+      // ✅ Check if payment info already exists
       const existingPayment = await PaymentInformation.findOne({ order: order._id });
       if (existingPayment) {
-        console.log("Payment info already exists for this order");
         return {
           message: "Payment info already recorded",
           orderId: order._id,
@@ -154,8 +83,21 @@ const updatePaymentInformation = async (reqData) => {
         };
       }
 
-      // ✅ Create new payment record
+      // ✅ Deduct usedSuperCoins now
       const user = await User.findById(order.user);
+      if (!user) throw new Error("User not found");
+
+      if (order.usedSuperCoins && order.usedSuperCoins > 0) {
+        if (user.superCoins < order.usedSuperCoins) {
+          throw new Error("User doesn't have enough Super Coins to deduct");
+        }
+
+        user.superCoins -= order.usedSuperCoins;
+        await user.save();
+        console.log(`✅ Deducted ${order.usedSuperCoins} Super Coins from user ${user._id}`);
+      }
+
+      // ✅ Save payment info
       const paymentInfo = new PaymentInformation({
         user: user._id,
         userSnapshot: {
@@ -173,11 +115,10 @@ const updatePaymentInformation = async (reqData) => {
 
       await paymentInfo.save();
 
-      // ✅ Link payment record to user
       user.paymentInformation.push(paymentInfo._id);
       await user.save();
 
-      // ✅ Update order status via placedOrder with payment meta
+      // ✅ Update order status with payment details
       await orderService.placedOrder(orderId, {
         paymentId,
         method: payment.method,
@@ -197,7 +138,6 @@ const updatePaymentInformation = async (reqData) => {
     throw new Error(error.message);
   }
 };
-
 
 
 const getUserPaymentHistory = async (userId, orderId = null) => {
@@ -237,10 +177,5 @@ const getUserPaymentHistory = async (userId, orderId = null) => {
     throw new Error(error.message);
   }
 };
-
-
-
-
-
 
 module.exports={createPaymentLink,updatePaymentInformation,getUserPaymentHistory,}

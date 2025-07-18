@@ -556,6 +556,7 @@ const categoryHierarchy = {
       { value: "cargos", label: "Cargo" },
       { value: "track_pants", label: "Track Pants" },
       { value: "jeans", label: "Jeans" },
+      { value: "skirts", label: "Skirts" },
     ],
     blazer: [
       { value: "blazers", label: "Blazer" },

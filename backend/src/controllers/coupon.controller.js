@@ -1,21 +1,42 @@
-const couponService = require("../services/coupon.services.js")
+const couponService = require("../services/coupon.services");
 
-exports.applyCoupon = async (req, res) => {
+exports.createCoupon = async (req, res) => {
   try {
-    const { code, userId, orderId } = req.body;
-    const result = await couponService.applyCoupon(code, userId, orderId);
-    res.status(200).json(result);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+    const created = await couponService.createCoupon(req.body);
+    res.status(201).json({
+      success: true,
+      message: "Coupon created",
+      coupon: created,
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
   }
 };
 
-// Admin: View coupon usage
+exports.getAllCoupons = async (req, res) => {
+  try {
+    const allCoupons = await couponService.getAllCoupons();
+    res.status(200).json({ success: true, coupons: allCoupons });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 exports.getCouponUsage = async (req, res) => {
   try {
-    const data = await couponService.getAllCouponUsage();
-    res.status(200).json(data);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    const usages = await couponService.getAllCouponUsage();
+    res.status(200).json({ success: true, usageHistory: usages });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.applyCoupon = async (req, res) => {
+  const { code, userId, orderId } = req.body;
+  try {
+    const result = await couponService.applyCoupon(code, userId, orderId);
+    res.status(200).json({ success: true, ...result });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
   }
 };

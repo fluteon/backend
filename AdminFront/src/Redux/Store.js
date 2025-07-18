@@ -8,9 +8,7 @@ import { orderReducer } from "./Customers/Order/Reducer";
 import adminOrderReducer from "./Admin/Orders/Reducer";
 import ReviewReducer from "./Customers/Review/Reducer";
 import { paymentReducer } from "./Customers/Payment/Reducer";
-
-
-
+import { createdCouponReducer } from "./Admin/Coupon/Reducer";
 
 
 const rootReducers=combineReducers({
@@ -25,6 +23,7 @@ const rootReducers=combineReducers({
     adminsProduct:productReducer,
     adminsOrder:adminOrderReducer,
     payment: paymentReducer,
+    createCoupon:createdCouponReducer,
 
 
 });

@@ -29,6 +29,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { getUser, logout } from "../Redux/Auth/Action";
 import { useEffect } from "react";
 import { deepPurple } from "@mui/material/colors";
+import SellIcon from '@mui/icons-material/Sell';
+import Coupan from "./componets/Coupan/Coupan";
 
 const drawerWidth = 240;
 
@@ -38,6 +40,7 @@ const menu = [
   { name: "Customers", path: "/customers" },
   { name: "Orders", path: "/orders" },
   { name: "Add Product", path: "/product/create" },
+  { name: "Add Coupan Code", path: "/coupan"}
 ];
 
 
@@ -163,6 +166,7 @@ export default function AdminPannel() {
   <Route path="orders" element={<OrdersTable />} />
   <Route path="customers" element={<Customers />} />
   <Route path="demo" element={<DemoAdmin />} />
+  <Route path="coupan" element={<Coupan />} />
 </Routes>
 
 
