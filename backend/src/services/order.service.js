@@ -129,6 +129,7 @@ async function outForDelivery(orderId) {
 }
 
 const Product = require("../models/product.model"); // Make sure it's imported
+const User = require("../models/user.model.js");
 
 async function deliveredOrder(orderId) {
   const order = await findOrderById(orderId);
