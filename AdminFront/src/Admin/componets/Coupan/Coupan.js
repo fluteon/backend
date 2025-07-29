@@ -1,17 +1,45 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Table, TableHead, TableBody, TableCell, TableRow, Typography, CircularProgress } from '@mui/material';
+import {
+  Button,
+  Table,
+  TableHead,
+  TableBody,
+  TableCell,
+  TableRow,
+  Typography,
+  CircularProgress,
+  IconButton,
+} from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useDispatch, useSelector } from 'react-redux';
 import CouponModal from './CouponModal';
-import { getAllCoupons } from '../../../Redux/Admin/Coupon/Action';
+import {
+  getAllCoupons,
+  deleteCoupon,
+} from '../../../Redux/Admin/Coupon/Action';
 
 function Coupan() {
   const [openModal, setOpenModal] = useState(false);
+  const [deletingId, setDeletingId] = useState(null); // for loader per row
+
   const dispatch = useDispatch();
-const { loading, coupons = [], error } = useSelector((state) => state.createCoupon || {});
+
+  const {
+    loading,
+    coupons = [],
+    error,
+  } = useSelector((state) => state.createCoupon || {});
 
   useEffect(() => {
     dispatch(getAllCoupons());
-  }, [dispatch, openModal]); // refresh when modal closes
+  }, [dispatch, openModal]);
+
+  const handleDelete = async (id) => {
+    setDeletingId(id);
+    await dispatch(deleteCoupon(id));
+    setDeletingId(null);
+    dispatch(getAllCoupons());
+  };
 
   return (
     <div className="p-4">
@@ -52,6 +80,7 @@ const { loading, coupons = [], error } = useSelector((state) => state.createCoup
               <TableCell>Used By</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Expires At</TableCell>
+              <TableCell>Action</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -68,7 +97,24 @@ const { loading, coupons = [], error } = useSelector((state) => state.createCoup
                 <TableCell>{coupon.usageLimit}</TableCell>
                 <TableCell>{coupon.usedBy.length}</TableCell>
                 <TableCell>{coupon.isActive ? 'Active' : 'Inactive'}</TableCell>
-                <TableCell>{new Date(coupon.expiresAt).toLocaleDateString()}</TableCell>
+                <TableCell>
+                  {coupon.expiresAt
+                    ? new Date(coupon.expiresAt).toLocaleDateString()
+                    : 'N/A'}
+                </TableCell>
+                <TableCell>
+                  <IconButton
+                    onClick={() => handleDelete(coupon._id)}
+                    disabled={deletingId === coupon._id}
+                    color="error"
+                  >
+                    {deletingId === coupon._id ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      <DeleteIcon />
+                    )}
+                  </IconButton>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

@@ -40,3 +40,18 @@ exports.applyCoupon = async (req, res) => {
     res.status(400).json({ success: false, message: err.message });
   }
 };
+
+exports.deleteCoupon = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const deletedCoupon = await couponService.deleteCoupon(id);
+    res.status(200).json({
+      success: true,
+      message: "Coupon deleted successfully",
+      deletedCoupon,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

@@ -1,10 +1,14 @@
 // reducers/couponReducer.js
 
+import { accordionActionsClasses } from "@mui/material";
 import {
   CREATE_COUPON_REQUEST,
   CREATE_COUPON_SUCCESS,
   CREATE_COUPON_FAIL,
   GET_ALL_COUPON_REQUEST, GET_ALL_COUPON_SUCCESS, GET_ALL_COUPON_FAIL,
+  DELETE_REQUEST,
+  DELETE_SUCCESS,
+  DELETE_FAIL,
 } from "./ActionType";
 
 const initialState = {
@@ -49,7 +53,20 @@ case GET_ALL_COUPON_SUCCESS:
 
     case GET_ALL_COUPON_FAIL:
       return { loading: false, coupons: [], error: action.payload };
-
+    case DELETE_REQUEST:
+      return{...state,loading:true}
+    case DELETE_SUCCESS :
+      return {
+        ...state,
+        loading: false,
+        success: true,
+        message: action.payload.message,
+        coupons: state.coupons.filter(
+          (coupon) => coupon._id !== action.payload.deletedCoupon._id
+        ),
+      };
+      case DELETE_FAIL:
+        return{loading:false,success:false,error:action.payload}
     default:
       return state;
   }

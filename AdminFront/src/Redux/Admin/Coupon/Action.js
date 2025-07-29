@@ -1,5 +1,5 @@
 import api from "../../../config/api";
-import {CREATE_COUPON_REQUEST,CREATE_COUPON_SUCCESS,CREATE_COUPON_FAIL, GET_ALL_COUPON_REQUEST, GET_ALL_COUPON_SUCCESS, GET_ALL_COUPON_FAIL,
+import {CREATE_COUPON_REQUEST,CREATE_COUPON_SUCCESS,CREATE_COUPON_FAIL, GET_ALL_COUPON_REQUEST, GET_ALL_COUPON_SUCCESS, GET_ALL_COUPON_FAIL, DELETE_REQUEST, DELETE_SUCCESS, DELETE_FAIL,
 } from "./ActionType";
 
 export const createdCoupon = (couponData) => async (dispatch) => {
@@ -42,5 +42,24 @@ export const getAllCoupons = () => async (dispatch) => {
     });
   }
 };
+
+export const deleteCoupon = (id) => async (dispatch) => {
+  try {
+    dispatch({ type: DELETE_REQUEST });
+
+    const { data } = await api.delete(`/api/coupons/delete/${id}`);
+
+    dispatch({
+      type: DELETE_SUCCESS,
+      payload: data,
+    });
+  } catch (error) {
+    dispatch({
+      type: DELETE_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
+  }
+};
+
 
 
