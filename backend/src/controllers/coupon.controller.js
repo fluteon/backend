@@ -55,3 +55,19 @@ exports.deleteCoupon = async (req, res) => {
   }
 };
 
+
+exports.updateCoupon = async (req, res) => {
+  const { id } = req.params;
+  const updatedData = req.body;
+
+  try {
+    const result = await couponService.updateCoupon(updatedData, id);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+

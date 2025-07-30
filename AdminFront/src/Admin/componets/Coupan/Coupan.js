@@ -10,6 +10,7 @@ import {
   CircularProgress,
   IconButton,
 } from '@mui/material';
+import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useDispatch, useSelector } from 'react-redux';
 import CouponModal from './CouponModal';
@@ -17,18 +18,15 @@ import {
   getAllCoupons,
   deleteCoupon,
 } from '../../../Redux/Admin/Coupon/Action';
+import { CREATE_COUPON_SUCCESS } from '../../../Redux/Admin/Coupon/ActionType';
 
 function Coupan() {
   const [openModal, setOpenModal] = useState(false);
-  const [deletingId, setDeletingId] = useState(null); // for loader per row
+  const [deletingId, setDeletingId] = useState(null);
+  const [editingCoupon, setEditingCoupon] = useState(null);
 
   const dispatch = useDispatch();
-
-  const {
-    loading,
-    coupons = [],
-    error,
-  } = useSelector((state) => state.createCoupon || {});
+  const { loading, coupons = [], error } = useSelector((state) => state.createCoupon || {});
 
   useEffect(() => {
     dispatch(getAllCoupons());
@@ -40,6 +38,19 @@ function Coupan() {
     setDeletingId(null);
     dispatch(getAllCoupons());
   };
+
+  const handleEdit = (coupon) => {
+    dispatch({ type: CREATE_COUPON_SUCCESS, payload: {} });
+    setEditingCoupon(coupon);
+    setOpenModal(true);
+  };
+
+  useEffect(() => {
+    if (!openModal) {
+      dispatch({ type: CREATE_COUPON_SUCCESS, payload: {} });
+      setEditingCoupon(null);
+    }
+  }, [openModal, dispatch]);
 
   return (
     <div className="p-4">
@@ -53,12 +64,21 @@ function Coupan() {
             color: 'black',
           },
         }}
-        onClick={() => setOpenModal(true)}
+        onClick={() => {
+          dispatch({ type: CREATE_COUPON_SUCCESS, payload: {} });
+          setEditingCoupon(null);
+          setOpenModal(true);
+        }}
       >
         Create Coupon
       </Button>
 
-      {openModal && <CouponModal onClose={() => setOpenModal(false)} />}
+      {openModal && (
+        <CouponModal
+          onClose={() => setOpenModal(false)}
+          couponData={editingCoupon}
+        />
+      )}
 
       <Typography variant="h6" sx={{ mt: 5, mb: 2 }}>
         All Coupons
@@ -95,7 +115,7 @@ function Coupan() {
                 </TableCell>
                 <TableCell>₹{coupon.minOrderAmount}</TableCell>
                 <TableCell>{coupon.usageLimit}</TableCell>
-                <TableCell>{coupon.usedBy.length}</TableCell>
+                <TableCell>{coupon.usedBy?.length || 0}</TableCell>
                 <TableCell>{coupon.isActive ? 'Active' : 'Inactive'}</TableCell>
                 <TableCell>
                   {coupon.expiresAt
@@ -103,6 +123,9 @@ function Coupan() {
                     : 'N/A'}
                 </TableCell>
                 <TableCell>
+                  <IconButton onClick={() => handleEdit(coupon)} color="primary" sx={{ mr: 1 }}>
+                    <EditIcon />
+                  </IconButton>
                   <IconButton
                     onClick={() => handleDelete(coupon._id)}
                     disabled={deletingId === coupon._id}

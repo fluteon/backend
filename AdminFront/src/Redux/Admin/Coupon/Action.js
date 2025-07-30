@@ -1,5 +1,5 @@
 import api from "../../../config/api";
-import {CREATE_COUPON_REQUEST,CREATE_COUPON_SUCCESS,CREATE_COUPON_FAIL, GET_ALL_COUPON_REQUEST, GET_ALL_COUPON_SUCCESS, GET_ALL_COUPON_FAIL, DELETE_REQUEST, DELETE_SUCCESS, DELETE_FAIL,
+import {CREATE_COUPON_REQUEST,CREATE_COUPON_SUCCESS,CREATE_COUPON_FAIL, GET_ALL_COUPON_REQUEST, GET_ALL_COUPON_SUCCESS, GET_ALL_COUPON_FAIL, DELETE_REQUEST, DELETE_SUCCESS, DELETE_FAIL, UPDATE_COUPON_REQUEST, UPDATE_COUPON_SUCCESS, UPDATE_COUPON_FAIL,
 } from "./ActionType";
 
 export const createdCoupon = (couponData) => async (dispatch) => {
@@ -56,6 +56,24 @@ export const deleteCoupon = (id) => async (dispatch) => {
   } catch (error) {
     dispatch({
       type: DELETE_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
+  }
+};
+
+export const updateCoupon = (couponData, id) => async (dispatch) => {
+  try {
+    dispatch({ type: UPDATE_COUPON_REQUEST }); // Or a new type like UPDATE_COUPON_REQUEST
+
+    const { data } = await api.put(`/api/coupons/update/${id}`, couponData);
+
+    dispatch({
+      type: UPDATE_COUPON_SUCCESS, // Or a new type like UPDATE_COUPON_SUCCESS
+      payload: data,
+    });
+  } catch (error) {
+    dispatch({
+      type: UPDATE_COUPON_FAIL,
       payload: error.response?.data?.message || error.message,
     });
   }

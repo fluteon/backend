@@ -9,6 +9,9 @@ import {
   DELETE_REQUEST,
   DELETE_SUCCESS,
   DELETE_FAIL,
+  UPDATE_COUPON_REQUEST,
+  UPDATE_COUPON_SUCCESS,
+  UPDATE_COUPON_FAIL,
 } from "./ActionType";
 
 const initialState = {
@@ -67,6 +70,23 @@ case GET_ALL_COUPON_SUCCESS:
       };
       case DELETE_FAIL:
         return{loading:false,success:false,error:action.payload}
+      
+        case UPDATE_COUPON_REQUEST :
+          return {...state,loading:true}
+        case UPDATE_COUPON_SUCCESS:
+  return {
+    ...state,
+    loading: false,
+    success: true,
+    message: action.payload.message,
+    coupons: state.coupons.map((coupon) =>
+      coupon._id === action.payload.updatedCoupon._id
+        ? action.payload.updatedCoupon
+        : coupon
+    ),
+  };
+case UPDATE_COUPON_FAIL :
+  return {loading:false, success:false, error:action.payload}
     default:
       return state;
   }

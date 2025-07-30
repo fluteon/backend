@@ -3,8 +3,6 @@ import {
   TextField,
   Button,
   Typography,
-  Card,
-  CardContent,
   Alert,
   MenuItem,
   IconButton,
@@ -12,12 +10,13 @@ import {
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import { useDispatch, useSelector } from "react-redux";
-import { createdCoupon } from "../../../Redux/Admin/Coupon/Action";
+import { createdCoupon, updateCoupon } from "../../../Redux/Admin/Coupon/Action";
 import { motion } from "framer-motion";
 
-const CouponModal = ({ onClose }) => {
+const CouponModal = ({ onClose, couponData }) => {
   const dispatch = useDispatch();
-const { loading, success, error, message } = useSelector((store) => store.createCoupon);
+  const isEditMode = !!couponData;
+  const { loading, success, error, message } = useSelector((store) => store.createCoupon);
 
   const [formData, setFormData] = useState({
     code: "",
@@ -29,6 +28,8 @@ const { loading, success, error, message } = useSelector((store) => store.create
     expiresAt: "",
   });
 
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -39,22 +40,34 @@ const { loading, success, error, message } = useSelector((store) => store.create
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    dispatch(createdCoupon(formData));
+    setHasSubmitted(true);
+    if (isEditMode) {
+      dispatch(updateCoupon(formData, couponData._id));
+    } else {
+      dispatch(createdCoupon(formData));
+    }
   };
 
   useEffect(() => {
-    if (success) {
+    if (couponData) {
       setFormData({
-        code: "",
-        discountType: "flat",
-        discountValue: "",
-        minOrderAmount: "",
-        usageLimit: "",
-        isActive: true,
-        expiresAt: "",
+        ...couponData,
+        expiresAt: couponData.expiresAt
+          ? new Date(couponData.expiresAt).toISOString().split("T")[0]
+          : "",
       });
     }
-  }, [success]);
+  }, [couponData]);
+
+  useEffect(() => {
+    if (hasSubmitted && !loading && success) {
+      const timer = setTimeout(() => {
+        onClose();
+        setHasSubmitted(false);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [hasSubmitted, loading, success, onClose]);
 
   return (
     <motion.div
@@ -85,25 +98,21 @@ const { loading, success, error, message } = useSelector((store) => store.create
           position: "relative",
         }}
       >
-        {/* Close Button */}
         <IconButton
           onClick={onClose}
-          sx={{
-            position: "absolute",
-            top: 8,
-            right: 8,
-            color: "#333",
-          }}
+          sx={{ position: "absolute", top: 8, right: 8, color: "#333" }}
         >
           <Close />
         </IconButton>
 
         <Typography variant="h5" align="center" gutterBottom>
-          Create New Coupon
+          {isEditMode ? "Update Coupon" : "Create New Coupon"}
         </Typography>
 
         <form onSubmit={handleSubmit}>
-          {success && <Alert severity="success">{message || "Coupon created successfully!"}</Alert>}
+          {success && hasSubmitted && (
+            <Alert severity="success">{message || "Coupon created successfully!"}</Alert>
+          )}
           {error && <Alert severity="error">{error}</Alert>}
 
           <TextField
@@ -178,12 +187,11 @@ const { loading, success, error, message } = useSelector((store) => store.create
           <Button
             sx={{ mt: 3 }}
             variant="contained"
-            color="primary"
             type="submit"
-            disabled={loading}
             fullWidth
+            disabled={loading}
           >
-            {loading ? "Creating..." : "Create Coupon"}
+            {loading ? "Submitting..." : isEditMode ? "Update Coupon" : "Create Coupon"}
           </Button>
         </form>
       </Box>

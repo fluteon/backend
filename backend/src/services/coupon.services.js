@@ -91,4 +91,19 @@ exports.deleteCoupon = async(Id)=>{
   }
 }
 
+exports.updateCoupon = async (updatedData, id) => {
+  const existing = await Coupon.findById(id);
+  if (!existing) {
+    throw new Error("Coupon not found");
+  }
+
+  Object.assign(existing, updatedData); // overwrite with new fields
+  await existing.save();
+
+  return {
+    success: true,
+    message: "Coupon updated successfully",
+    updatedCoupon: existing,
+  };
+};
 
