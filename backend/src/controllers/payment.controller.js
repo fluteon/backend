@@ -27,15 +27,19 @@
 const paymentService=require("../services/payment.service.js")
 const PaymentInformation = require("../models/payment.information.js");
 
+// controllers/payment.controller.js
 const createPaymentLink = async (req, res) => {
   try {
     const usedSuperCoins = req.body.usedSuperCoins || 0;
-    const paymentLink = await paymentService.createPaymentLink(req.params.id, usedSuperCoins);
+    const couponDiscount = req.body.couponDiscount || 0; // 👈 Add this
+    const paymentLink = await paymentService.createPaymentLink(req.params.id, usedSuperCoins, couponDiscount);
     return res.status(200).json(paymentLink);
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 };
+
+
 
 const updatePaymentInformation = async (req, res) => {
   try {
