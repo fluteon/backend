@@ -10,6 +10,8 @@ app.get("/",(req,res)=>{
     return res.status(200).send({message:"welcome to ecommerce api - node"})
 })
 
+const sitemapRoutes = require("./routes/sitemapRoutes.js");
+app.use('/', sitemapRoutes);
 const authRouter=require("./routes/auth.routes.js")
 app.use("/auth",authRouter)
 
