@@ -1,11 +1,10 @@
-// backend/routes/sitemap.js
 const express = require("express");
 const router = express.Router();
 
 router.get("/sitemap.xml", async (req, res) => {
   const baseUrl = "https://www.fluteon.com";
 
-  // TODO: Replace with real DB data if needed
+  // Simulated categories and products
   const categories = [
     "/women",
     "/women/bottom_wear",
@@ -18,6 +17,10 @@ router.get("/sitemap.xml", async (req, res) => {
   ];
 
   const urls = [...categories, ...products];
+
+  console.log("🗺️ Generating sitemap...");
+  console.log("📦 Categories:", categories);
+  console.log("🛍️ Products:", products);
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -33,6 +36,7 @@ router.get("/sitemap.xml", async (req, res) => {
     .join("")}
 </urlset>`;
 
+  console.log("✅ Sitemap successfully generated and sent");
   res.header("Content-Type", "application/xml");
   res.send(sitemap);
 });
