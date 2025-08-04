@@ -2,7 +2,20 @@ const express=require("express")
 const cors=require('cors');
 
 const app=express();
-
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        "default-src": ["'self'"],
+        "img-src": ["'self'", "data:", "https:"],
+        "script-src": ["'self'", "'unsafe-inline'", "https:"],
+        "style-src": ["'self'", "'unsafe-inline'", "https:"],
+        "font-src": ["'self'", "https:", "data:"],
+      },
+    },
+  })
+);
 app.use(express.json())
 app.use(cors())
 
