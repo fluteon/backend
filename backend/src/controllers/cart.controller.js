@@ -29,4 +29,24 @@ const findUserCart = async (req, res) => {
     }
   }
 
-  module.exports={findUserCart,addItemToCart};
+  applyCouponToCart = async (req, res) => {
+  try {
+    const { code, userId, cartId, cartTotal } = req.body;
+
+    const result = await cartService.applyCoupon(code, userId, cartId, cartTotal); // ✅ must be a defined function
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Failed to apply coupon" });
+  }
+};
+
+const allCoupon = async (req, res) => {
+  try {
+    const allCoupons = await cartService.allCoupon(); // 👈 call the function
+    res.status(200).json({ success: true, message: "Coupons fetched successfully", coupons: allCoupons });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+  module.exports={findUserCart,addItemToCart, applyCouponToCart, allCoupon};

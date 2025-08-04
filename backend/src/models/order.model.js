@@ -92,6 +92,14 @@ earnedSuperCoins:{
   type:Number,
   default:0
 },
+  couponCode: {
+    type: String,
+    default: null,
+  },
+  couponDiscount: {
+    type: Number,
+    default: 0,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

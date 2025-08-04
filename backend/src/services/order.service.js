@@ -6,9 +6,75 @@ const CartItem = require("../models/cartItem.model.js");
 const mongoose = require("mongoose");
 const { sendOrderConfirmationEmail } = require("../config/mailer.js");
 
+// async function createOrder(user, shippAddress, usedSuperCoins = 0) {
+//   let address;
+
+//   if (shippAddress._id) {
+//     address = await Address.findById(shippAddress._id);
+//   } else {
+//     address = new Address(shippAddress);
+//     address.user = user;
+//     await address.save();
+//     user.addresses.push(address);
+//     await user.save();
+//   }
+
+//   const cart = await cartService.findUserCart(user._id);
+//   const orderItems = [];
+//   const orderedProductIds = [];
+
+//   for (const item of cart.cartItems) {
+//     const orderItem = new OrderItem({
+//       price: item.price,
+//       product: item.product,
+//       quantity: item.quantity,
+//       size: item.size,
+//       userId: item.userId,
+//       discountedPrice: item.discountedPrice,
+//     });
+
+//     const createdOrderItem = await orderItem.save();
+//     orderItems.push(createdOrderItem);
+//     orderedProductIds.push(item.product._id.toString());
+//   }
+
+//   // 🪙 Validate and Deduct Super Coins
+// const dbUser = await User.findById(user._id); // ✅ Fetch Mongoose document
+// if (!dbUser) throw new Error("User not found");
+
+// if (usedSuperCoins > 0) {
+//   if (dbUser.superCoins < usedSuperCoins) {
+//     throw new Error("Insufficient Super Coins");
+//   }
+
+//   dbUser.superCoins -= usedSuperCoins; // ✅ Deduct coins from Mongoose doc
+//   await dbUser.save(); // ✅ Save it properly
+// }
+//   const discountFromCoins = usedSuperCoins * 1;
+//   const finalPriceAfterCoins = Math.max(cart.totalDiscountedPrice - discountFromCoins, 0);
+
+//   const createdOrder = new Order({
+//     user,
+//     orderItems,
+//     totalPrice: cart.totalPrice,
+//     totalDiscountedPrice: finalPriceAfterCoins,
+//     discounte: cart.discounte,
+//     totalItem: cart.totalItem,
+//     shippingAddress: address,
+//     usedSuperCoins,
+//     orderDate: new Date(),
+//     orderStatus: "PENDING",
+//     paymentDetails: { paymentStatus: "PENDING" },
+//     createdAt: new Date(),
+//   });
+
+//   return await createdOrder.save();
+// }
+
 async function createOrder(user, shippAddress, usedSuperCoins = 0) {
   let address;
 
+  // 🏠 Address setup
   if (shippAddress._id) {
     address = await Address.findById(shippAddress._id);
   } else {
@@ -19,9 +85,9 @@ async function createOrder(user, shippAddress, usedSuperCoins = 0) {
     await user.save();
   }
 
+  // 🛒 Get cart & items
   const cart = await cartService.findUserCart(user._id);
   const orderItems = [];
-  const orderedProductIds = [];
 
   for (const item of cart.cartItems) {
     const orderItem = new OrderItem({
@@ -32,36 +98,46 @@ async function createOrder(user, shippAddress, usedSuperCoins = 0) {
       userId: item.userId,
       discountedPrice: item.discountedPrice,
     });
-
     const createdOrderItem = await orderItem.save();
     orderItems.push(createdOrderItem);
-    orderedProductIds.push(item.product._id.toString());
   }
 
-  // 🪙 Validate and Deduct Super Coins
-const dbUser = await User.findById(user._id); // ✅ Fetch Mongoose document
-if (!dbUser) throw new Error("User not found");
+  // 🪙 Super Coin Handling
+  const dbUser = await User.findById(user._id);
+  if (!dbUser) throw new Error("User not found");
 
-if (usedSuperCoins > 0) {
-  if (dbUser.superCoins < usedSuperCoins) {
-    throw new Error("Insufficient Super Coins");
+  if (usedSuperCoins > 0) {
+    if (dbUser.superCoins < usedSuperCoins) {
+      throw new Error("Insufficient Super Coins");
+    }
+    dbUser.superCoins -= usedSuperCoins;
+    await dbUser.save();
   }
 
-  dbUser.superCoins -= usedSuperCoins; // ✅ Deduct coins from Mongoose doc
-  await dbUser.save(); // ✅ Save it properly
-}
   const discountFromCoins = usedSuperCoins * 1;
-  const finalPriceAfterCoins = Math.max(cart.totalDiscountedPrice - discountFromCoins, 0);
 
+  // 🎟️ Coupon Handling
+  const couponCode = cart?.couponCode || null;
+  const couponDiscount = cart?.couponDiscount || 0;
+
+  // 💰 Final price after all discounts
+  const finalPriceAfterCoinsAndCoupon = Math.max(
+    cart.totalDiscountedPrice - discountFromCoins - couponDiscount,
+    0
+  );
+
+  // 📦 Create order
   const createdOrder = new Order({
     user,
     orderItems,
     totalPrice: cart.totalPrice,
-    totalDiscountedPrice: finalPriceAfterCoins,
+    totalDiscountedPrice: finalPriceAfterCoinsAndCoupon,
     discounte: cart.discounte,
     totalItem: cart.totalItem,
     shippingAddress: address,
     usedSuperCoins,
+    couponCode,
+    couponDiscount,
     orderDate: new Date(),
     orderStatus: "PENDING",
     paymentDetails: { paymentStatus: "PENDING" },
@@ -70,6 +146,8 @@ if (usedSuperCoins > 0) {
 
   return await createdOrder.save();
 }
+
+
 
 async function placedOrder(orderId, paymentMeta = {}) {
   const order = await findOrderById(orderId);
@@ -127,6 +205,7 @@ async function outForDelivery(orderId) {
   order.statusUpdatedAt = new Date();
   return await order.save();
 }
+
 
 const Product = require("../models/product.model"); // Make sure it's imported
 const User = require("../models/user.model.js");
@@ -318,8 +397,6 @@ async function getAllOrders(page = 1, pageSize = 10, status = "", sort = "Newest
     totalOrders,
   };
 }
-
-
 async function deleteOrder(orderId) {
   const order = await findOrderById(orderId);
   if (!order) throw new Error("order not found with id " + orderId);
@@ -452,6 +529,7 @@ const recentUsers = await mongoose
   };
 }
 
+
 const rewardeSuperCoins = async (userId, orderId) => {
   console.log("🎯 rewardeSuperCoins called for", userId, "with order", orderId);
 
@@ -481,7 +559,6 @@ const rewardeSuperCoins = async (userId, orderId) => {
 
   return updatedUser;
 };
-
 const applySuperCoins = async (userId, coinCount, orderAmount) => {
   const user = await User.findById(userId);
   if (coinCount > user.superCoins) throw new Error("Not enough coins");
@@ -491,6 +568,8 @@ const applySuperCoins = async (userId, coinCount, orderAmount) => {
 
   return { finalAmount, discount };
 };
+
+
 module.exports = {
   createOrder,
   placedOrder,
@@ -506,6 +585,6 @@ module.exports = {
   returnOrder,
   approveReturnByAdmin,
   getAdminDashboardOverview,
-    rewardeSuperCoins,
+  rewardeSuperCoins,
   applySuperCoins
 };
