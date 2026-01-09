@@ -19,7 +19,7 @@ app.use(
 app.use(express.json())
 app.use(cors({
   origin: [
-    'https://fluteon.vercel.app', 
+    'https://fluteon.com/', 
     'http://localhost:3000' 
   ],
   credentials: true
