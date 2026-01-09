@@ -581,11 +581,7 @@ const categoryHierarchy = {
       { value: "kalamkari", label: "Kalamkari Kurti" },
     ],
   },
-  kids: {
-    bottom_wear: [],
-    tops: [],
-    kurtis: [],
-  },
+  
 };
 
 
