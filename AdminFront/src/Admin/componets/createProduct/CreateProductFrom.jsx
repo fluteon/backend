@@ -809,11 +809,17 @@ if (isEditing) {
 useEffect(() => {
   if (productData.thirdLavelCategory && !productToUpdate) {
     fetch(`${API_BASE_URL}/api/admin/products/${productData.thirdLavelCategory}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error('Size chart not found');
+        }
+        return res.json();
+      })
       .then((data) => {
         console.log("Size chart response:", data);
 
         if (!data?.sizes || data.sizes.length === 0) {
+          console.log("No size chart found, using free size");
           setSizeChart(null);
           setProductData((prevState) => ({
             ...prevState,
@@ -831,7 +837,8 @@ useEffect(() => {
           }));
         }
       })
-      .catch(() => {
+      .catch((error) => {
+        console.log("Size chart fetch error:", error.message, "- Using free size");
         setSizeChart(null);
         setProductData((prevState) => ({
           ...prevState,
@@ -851,20 +858,6 @@ useEffect(() => {
     categoryHierarchy[productData.topLavelCategory][productData.secondLavelCategory]
       ? categoryHierarchy[productData.topLavelCategory][productData.secondLavelCategory]
       : [];
-
-
-useEffect(() => {
-  if (productData.thirdLavelCategory) {
-    fetch(`${API_BASE_URL}/api/admin/products/${productData.thirdLavelCategory}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setSizeChart(data); // only update chart, not productData.size
-      })
-      .catch(() => {
-        setSizeChart(null);
-      });
-  }
-}, [productData.thirdLavelCategory]);
 
   return (
     <Fragment className="createProductContainer">
