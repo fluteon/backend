@@ -581,7 +581,7 @@ const categoryHierarchy = {
       { value: "kalamkari", label: "Kalamkari Kurti" },
     ],
   },
-  
+ 
 };
 
 
@@ -819,11 +819,12 @@ useEffect(() => {
         console.log("Size chart response:", data);
 
         if (!data?.sizes || data.sizes.length === 0) {
-          console.log("No size chart found, using free size");
+          console.log("No size chart found, providing manual size entry");
           setSizeChart(null);
+          // Provide one empty size field for manual entry
           setProductData((prevState) => ({
             ...prevState,
-            size: [],
+            size: [{ name: "", quantity: 0 }],
           }));
         } else {
           const formattedSizes = data.sizes.map((sizeObj) => ({
@@ -838,11 +839,12 @@ useEffect(() => {
         }
       })
       .catch((error) => {
-        console.log("Size chart fetch error:", error.message, "- Using free size");
+        console.log("Size chart fetch error:", error.message, "- Providing manual size entry");
         setSizeChart(null);
+        // Provide one empty size field for manual entry when no size chart exists
         setProductData((prevState) => ({
           ...prevState,
-          size: [],
+          size: [{ name: "", quantity: 0 }],
         }));
       });
   }
@@ -1058,31 +1060,44 @@ useEffect(() => {
           </Grid>
 
 {productData.size.length > 0 ? (
-  productData.size.map((size, index) => (
-    <Grid container item spacing={3} key={index}>
-      <Grid item xs={12} sm={6}>
-        <TextField
-          label="Size Name"
-          name="name"
-          value={size.name}
-          onChange={(event) => handleSizeChange(event, index)}
-          required
-          fullWidth
-        />
+  <>
+    {productData.size.map((size, index) => (
+      <Grid container item spacing={3} key={index}>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            label="Size Name"
+            name="name"
+            value={size.name}
+            onChange={(event) => handleSizeChange(event, index)}
+            required
+            fullWidth
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            label="Quantity"
+            name="size_quantity"
+            type="number"
+            value={size.quantity}
+            onChange={(event) => handleSizeChange(event, index)}
+            required
+            fullWidth
+          />
+        </Grid>
       </Grid>
-      <Grid item xs={12} sm={6}>
-        <TextField
-          label="Quantity"
-          name="size_quantity"
-          type="number"
-          value={size.quantity}
-          onChange={(event) => handleSizeChange(event, index)}
-          required
-          fullWidth
-        />
+    ))}
+    {!sizeChart && (
+      <Grid item xs={12}>
+        <Button
+          variant="outlined"
+          onClick={handleAddSize}
+          sx={{ mt: 1 }}
+        >
+          + Add Another Size
+        </Button>
       </Grid>
-    </Grid>
-  ))
+    )}
+  </>
 ) : (
   <Grid item xs={12} sm={6}>
     <TextField
