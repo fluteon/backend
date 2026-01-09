@@ -17,13 +17,7 @@ app.use(
   })
 );
 app.use(express.json())
-app.use(cors({
-  origin: [
-    'https://fluteon.com/', 
-    'http://localhost:3000' 
-  ],
-  credentials: true
-}))
+app.use(cors())
 
 app.get("/",(req,res)=>{
     return res.status(200).send({message:"welcome to ecommerce api - node"})
