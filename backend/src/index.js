@@ -1,6 +1,7 @@
 const express=require("express")
 const cors=require('cors');
 const helmet = require("helmet");
+const { generalLimiter } = require("./middleware/rateLimiter.js");
 const app=express();
 app.use(
   helmet({
@@ -17,7 +18,17 @@ app.use(
   })
 );
 app.use(express.json())
-app.use(cors())
+
+// Apply general rate limiting to all requests
+app.use(generalLimiter);
+
+app.use(cors({
+  origin: [
+    'https://fluteon.com', // your Vercel domain
+    'http://localhost:3000' // for local testing
+  ],
+  credentials: true
+}))
 
 app.get("/",(req,res)=>{
     return res.status(200).send({message:"welcome to ecommerce api - node"})

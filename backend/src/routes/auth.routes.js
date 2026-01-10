@@ -3,49 +3,56 @@ const express=require("express");
 const router=express.Router();
 const authController=require("../controllers/auth.controller.js")
 const {verifyEmailService, confirmOtpService,sendResetOtpService, resetPasswordService} =require("../services/user.service.js")
+const { authLimiter, otpLimiter, passwordResetLimiter } = require("../middleware/rateLimiter.js");
+const { registerValidation, loginValidation, otpValidation, otpVerifyValidation } = require("../middleware/validators.js");
+const { sanitizeError, errorMessages } = require("../utils/errorHandler.js");
 
 
 
-router.post("/signup",authController.register)
-router.post("/signin",authController.login)
+router.post("/signup", authLimiter, registerValidation, authController.register)
+router.post("/signin", authLimiter, loginValidation, authController.login)
 
 
-router.post("/send-otp", async (req, res) => {
+router.post("/send-otp", otpLimiter, otpValidation, async (req, res) => {
   try {
     const { email } = req.body;
     const result = await verifyEmailService(email);
     res.json(result);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    const safeMessage = sanitizeError(err, errorMessages.otp.send);
+    res.status(400).json({ message: safeMessage });
   }
 });
 
-router.post("/verify-otp", async (req, res) => {
+router.post("/verify-otp", authLimiter, otpVerifyValidation, async (req, res) => {
   try {
     const { email, otp } = req.body;
     const result = await confirmOtpService(email, otp);
     res.json(result);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    const safeMessage = sanitizeError(err, errorMessages.otp.verify);
+    res.status(400).json({ message: safeMessage });
   }
 });
 
-router.post("/send-reset-otp", async (req, res) => {
+router.post("/send-reset-otp", passwordResetLimiter, otpValidation, async (req, res) => {
   try {
     const response = await sendResetOtpService(req.body.email);
     res.json(response);
   } catch (e) {
-    res.status(400).json({ message: e.message });
+    const safeMessage = sanitizeError(e, errorMessages.auth.reset);
+    res.status(400).json({ message: safeMessage });
   }
 });
 
-router.post("/reset-password", async (req, res) => {
+router.post("/reset-password", passwordResetLimiter, otpVerifyValidation, async (req, res) => {
   try {
     const { email, newPassword } = req.body;
     const response = await resetPasswordService(email, newPassword);
     res.json(response);
   } catch (e) {
-    res.status(400).json({ message: e.message });
+    const safeMessage = sanitizeError(e, errorMessages.auth.reset);
+    res.status(400).json({ message: safeMessage });
   }
 });
 

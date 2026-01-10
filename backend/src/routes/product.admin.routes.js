@@ -4,13 +4,24 @@ const productController=require("../controllers/product.controller.js");
 const upload = require("../middleware/upload.js");
 const sizeChart = require("../models/sizeChart.js");
 
+// Error handler for multer errors
+const handleUploadError = (err, req, res, next) => {
+  if (err) {
+    return res.status(400).json({ 
+      message: 'File upload error', 
+      error: err.message 
+    });
+  }
+  next();
+};
 
-router.post('/', upload.array("images", 4),productController.createProduct);
+router.post('/', upload.array("images", 4), handleUploadError, productController.createProduct);
 router.post('/creates', productController.createMultipleProduct);
 router.delete('/:id', productController.deleteProduct);
 router.put(
   '/:id',
   upload.fields([{ name: "images", maxCount: 4 }]),
+  handleUploadError,
   productController.updateProduct
 );
 // routes/sizeChart.route.js

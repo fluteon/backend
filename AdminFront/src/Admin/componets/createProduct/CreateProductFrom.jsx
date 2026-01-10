@@ -557,6 +557,8 @@ const categoryHierarchy = {
       { value: "track_pants", label: "Track Pants" },
       { value: "jeans", label: "Jeans" },
       { value: "skirts", label: "Skirts" },
+      { value: "tummytucker", label: "Tummytucker" },
+      { value: "swimmingsuit", label: "Swimming Suit" },
     ],
     blazer: [
       { value: "blazers", label: "Blazer" },
@@ -579,11 +581,7 @@ const categoryHierarchy = {
       { value: "kalamkari", label: "Kalamkari Kurti" },
     ],
   },
-  kids: {
-    bottom_wear: [],
-    tops: [],
-    kurtis: [],
-  },
+  
 };
 
 
@@ -811,15 +809,22 @@ if (isEditing) {
 useEffect(() => {
   if (productData.thirdLavelCategory && !productToUpdate) {
     fetch(`${API_BASE_URL}/api/admin/products/${productData.thirdLavelCategory}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error('Size chart not found');
+        }
+        return res.json();
+      })
       .then((data) => {
         console.log("Size chart response:", data);
 
         if (!data?.sizes || data.sizes.length === 0) {
+          console.log("No size chart found, providing manual size entry");
           setSizeChart(null);
+          // Provide one empty size field for manual entry
           setProductData((prevState) => ({
             ...prevState,
-            size: [],
+            size: [{ name: "", quantity: 0 }],
           }));
         } else {
           const formattedSizes = data.sizes.map((sizeObj) => ({
@@ -833,11 +838,13 @@ useEffect(() => {
           }));
         }
       })
-      .catch(() => {
+      .catch((error) => {
+        console.log("Size chart fetch error:", error.message, "- Providing manual size entry");
         setSizeChart(null);
+        // Provide one empty size field for manual entry when no size chart exists
         setProductData((prevState) => ({
           ...prevState,
-          size: [],
+          size: [{ name: "", quantity: 0 }],
         }));
       });
   }
@@ -853,20 +860,6 @@ useEffect(() => {
     categoryHierarchy[productData.topLavelCategory][productData.secondLavelCategory]
       ? categoryHierarchy[productData.topLavelCategory][productData.secondLavelCategory]
       : [];
-
-
-useEffect(() => {
-  if (productData.thirdLavelCategory) {
-    fetch(`${API_BASE_URL}/api/admin/products/${productData.thirdLavelCategory}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setSizeChart(data); // only update chart, not productData.size
-      })
-      .catch(() => {
-        setSizeChart(null);
-      });
-  }
-}, [productData.thirdLavelCategory]);
 
   return (
     <Fragment className="createProductContainer">
@@ -1067,31 +1060,44 @@ useEffect(() => {
           </Grid>
 
 {productData.size.length > 0 ? (
-  productData.size.map((size, index) => (
-    <Grid container item spacing={3} key={index}>
-      <Grid item xs={12} sm={6}>
-        <TextField
-          label="Size Name"
-          name="name"
-          value={size.name}
-          onChange={(event) => handleSizeChange(event, index)}
-          required
-          fullWidth
-        />
+  <>
+    {productData.size.map((size, index) => (
+      <Grid container item spacing={3} key={index}>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            label="Size Name"
+            name="name"
+            value={size.name}
+            onChange={(event) => handleSizeChange(event, index)}
+            required
+            fullWidth
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            label="Quantity"
+            name="size_quantity"
+            type="number"
+            value={size.quantity}
+            onChange={(event) => handleSizeChange(event, index)}
+            required
+            fullWidth
+          />
+        </Grid>
       </Grid>
-      <Grid item xs={12} sm={6}>
-        <TextField
-          label="Quantity"
-          name="size_quantity"
-          type="number"
-          value={size.quantity}
-          onChange={(event) => handleSizeChange(event, index)}
-          required
-          fullWidth
-        />
+    ))}
+    {!sizeChart && (
+      <Grid item xs={12}>
+        <Button
+          variant="outlined"
+          onClick={handleAddSize}
+          sx={{ mt: 1 }}
+        >
+          + Add Another Size
+        </Button>
       </Grid>
-    </Grid>
-  ))
+    )}
+  </>
 ) : (
   <Grid item xs={12} sm={6}>
     <TextField

@@ -1,5 +1,6 @@
 const axios = require("axios");
 require("dotenv").config();
+const logger = require("../utils/logger.js");
 
 const sendEmailViaBrevo = async (email, otp) => {
   try {
@@ -34,10 +35,19 @@ const sendEmailViaBrevo = async (email, otp) => {
       }
     );
 
-    console.log("✅ OTP email sent to", email);
+    logger.success("OTP email sent to", email);
   } catch (err) {
-    console.error("❌ Failed to send email to", email, err.response?.data || err.message);
-    throw new Error("Failed to send email");
+    logger.error("BREVO EMAIL ERROR - Full Details:");
+    logger.error("Status:", err.response?.status);
+    logger.error("Status Text:", err.response?.statusText);
+    logger.error("Response Data:", JSON.stringify(err.response?.data, null, 2));
+    logger.error("Request Config:", {
+      url: err.config?.url,
+      sender: process.env.FROM_EMAIL,
+      recipient: email
+    });
+    logger.error("Error Message:", err.message);
+    throw new Error(err.response?.data?.message || err.response?.data?.error || "Failed to send email");
   }
 };
 
