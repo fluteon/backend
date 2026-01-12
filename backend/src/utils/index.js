@@ -1,6 +1,7 @@
 const express=require("express")
 const cors=require('cors');
 const helmet = require("helmet");
+const { generalLimiter } = require("./middleware/rateLimiter.js");
 const app=express();
 app.use(
   helmet({
@@ -17,11 +18,59 @@ app.use(
   })
 );
 app.use(express.json())
-app.use(cors())
+
+// Apply general rate limiting to all requests
+app.use(generalLimiter);
+
+app.use(cors({
+  origin: [
+    'https://fluteon.com', // your Vercel domain
+    'http://localhost:3000' // for local testing
+  ],
+  credentials: true
+}))
 
 app.get("/",(req,res)=>{
     return res.status(200).send({message:"welcome to ecommerce api - node"})
 })
+
+// Health check endpoint for Render and monitoring
+app.get('/health', async (req, res) => {
+  const mongoose = require('mongoose');
+  const health = {
+    status: 'ok',
+    timestamp: Date.now(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    database: 'checking...',
+    memory: {
+      used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
+      total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + 'MB'
+    }
+  };
+  
+  try {
+    // Check database connection
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.connection.db.admin().ping();
+      health.database = 'connected';
+      health.dbStatus = 'healthy';
+    } else {
+      health.database = 'disconnected';
+      health.dbStatus = 'unhealthy';
+      health.status = 'degraded';
+    }
+    
+    const statusCode = health.status === 'ok' ? 200 : 503;
+    res.status(statusCode).json(health);
+  } catch (error) {
+    health.database = 'error';
+    health.dbStatus = 'unhealthy';
+    health.status = 'error';
+    health.error = error.message;
+    res.status(503).json(health);
+  }
+});
 
 const sitemapRoutes = require("./routes/sitemapRoutes.js");
 app.use('/', sitemapRoutes);
