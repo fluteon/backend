@@ -17,7 +17,7 @@ const connectDb = async () => {
       connectTimeoutMS: 10000, // Connection timeout
     });
     console.log("✅ MongoDB connected successfully");
-    console.log(`📊 Connection pool: min=${mongoose.connection.config.minPoolSize}, max=${mongoose.connection.config.maxPoolSize}`);
+    console.log(`📊 Connection pool: min=10, max=50 (configured)`);
   } catch (err) {
     console.error("❌ MongoDB connection error:", err.message);
     process.exit(1);
