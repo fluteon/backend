@@ -24,8 +24,12 @@ app.use(generalLimiter);
 
 app.use(cors({
   origin: [
-    'https://fluteon.com', // your Vercel domain
-    'http://localhost:3000' // for local testing
+    'https://fluteon.com',
+    'https://www.fluteon.com',
+    'https://fluteon.vercel.app',
+    /^https:\/\/.*\.vercel\.app$/, // Allow all Vercel preview URLs
+    'http://localhost:3000',
+    'http://localhost:3001'
   ],
   credentials: true
 }))
