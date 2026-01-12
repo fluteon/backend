@@ -1,1 +1,22 @@
+# Render Build Configuration
+# This file tells Render where to find your backend code
+
+services:
+  - type: web
+    name: fluteon-backend
+    runtime: node
+    env: node
+    # IMPORTANT: Point to the correct directory with package.json
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8000
+    # Health check endpoint we just created
+    healthCheckPath: /health
+    # Auto-deploy from main branch
+    autoDeploy: true
 
