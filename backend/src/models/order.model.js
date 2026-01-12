@@ -106,6 +106,12 @@ earnedSuperCoins:{
   },
 });
 
+// Database indexes for performance optimization
+orderSchema.index({ user: 1, createdAt: -1 }); // User's orders sorted by date
+orderSchema.index({ orderStatus: 1 }); // Filter by order status
+orderSchema.index({ 'paymentDetails.paymentStatus': 1 }); // Filter by payment status
+orderSchema.index({ createdAt: -1 }); // Recent orders
+
 const Order = mongoose.model('orders', orderSchema);
 
 module.exports = Order;

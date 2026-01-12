@@ -65,6 +65,13 @@ imageUrl: {
   },
 });
 
+// Database indexes for performance optimization
+productSchema.index({ category: 1, brand: 1 }); // Compound index for filtering
+productSchema.index({ price: 1, discountedPrice: 1 }); // Index for price sorting
+productSchema.index({ title: 'text', description: 'text' }); // Text search index
+productSchema.index({ createdAt: -1 }); // Index for newest products
+productSchema.index({ numRatings: -1 }); // Index for popular products
+
 const Product = mongoose.model('products', productSchema);
 
 module.exports = Product;

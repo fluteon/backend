@@ -17,6 +17,9 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
   },
   role: {
     type: String,
@@ -60,6 +63,11 @@ const userSchema = new mongoose.Schema({
     default: Date.now(),
   },
 });
+
+// Database indexes for performance
+userSchema.index({ email: 1 }, { unique: true }); // Email lookup and uniqueness
+userSchema.index({ mobile: 1 }); // Mobile number lookup
+userSchema.index({ createdAt: -1 }); // Recent users
 
 const User = mongoose.model("users", userSchema);
 
