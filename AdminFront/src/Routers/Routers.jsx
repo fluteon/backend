@@ -1,6 +1,14 @@
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import AdminPannel from "../Admin/AdminPannel";
+import AdminLogin from "../Admin/Auth/AdminLogin";
+
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const jwt = localStorage.getItem('jwt');
+  return jwt ? children : <Navigate to="/admin/login" replace />;
+};
+
 const Routers = () => {
   return (
     <div>
@@ -8,11 +16,21 @@ const Routers = () => {
         </div>
        <div className="">
         <Routes>
-        <Route path="/admin" element={<AdminPannel/>}></Route>
-      </Routes>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route 
+            path="/admin/*" 
+            element={
+              <ProtectedRoute>
+                <AdminPannel />
+              </ProtectedRoute>
+            } 
+          />
+          <Route path="/" element={<Navigate to="/admin/login" replace />} />
+        </Routes>
        </div>
     </div>
   );
 };
 
 export default Routers;
+
