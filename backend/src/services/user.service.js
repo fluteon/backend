@@ -52,13 +52,9 @@ const findUserById=async(userId)=>{
 
 const getUserByEmail=async(email)=>{
     try {
-
         const user=await User.findOne({email});
-
-        if(!user){
-            throw new Error("user not found with email: " + email)
-        }
-
+        
+        // Return null if user not found (let caller handle it)
         return user;
         
     } catch (error) {
