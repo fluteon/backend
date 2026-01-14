@@ -45,11 +45,17 @@ const login=async(req,res)=>{
                     lastName: lastName || '',
                     role: 'ADMIN' // Set admin role
                 });
+            } else {
+                // User exists - verify it's the same Google account by checking Firebase UID
+                const isPasswordValid = await bcrypt.compare(password, user.password);
+                if (!isPasswordValid) {
+                    return res.status(401).json({ message: "Invalid Google account" });
+                }
             }
 
             // Generate JWT and return
             const jwt = jwtProvider.generateToken(user._id);
-            return res.status(200).send({ jwt, message: "Admin login success", user });
+            return res.status(200).send({ jwt, message: "Admin login success" });
         }
 
         // ✅ Regular email/password login
@@ -68,7 +74,8 @@ const login=async(req,res)=>{
         return res.status(200).send({jwt,message:"login success"});
 
     } catch (error) {
-        return res.status(500).send({message: errorMessages.auth.login})
+        console.error('Login error:', error);
+        return res.status(500).send({message: error.message || errorMessages.auth.login})
     }
 }
 module.exports={register,login}
