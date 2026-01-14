@@ -3,6 +3,10 @@ const cors=require('cors');
 const helmet = require("helmet");
 const { generalLimiter } = require("./middleware/rateLimiter.js");
 const app=express();
+
+// Trust proxy for Render deployment (required for rate limiting)
+app.set('trust proxy', 1);
+
 app.use(
   helmet({
     contentSecurityPolicy: {
