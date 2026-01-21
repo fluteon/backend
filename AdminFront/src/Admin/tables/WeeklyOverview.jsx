@@ -16,7 +16,6 @@ import DotsVertical from 'mdi-material-ui/DotsVertical'
 // ** Custom Components Imports
 import ReactApexCharts from 'react-apexcharts';
 import { useState, useMemo } from 'react';
-import { useSelector } from 'react-redux';
 
 const SalesVerview = ({ overview = {} }) => {
   const theme = useTheme();

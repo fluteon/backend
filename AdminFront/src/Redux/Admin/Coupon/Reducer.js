@@ -1,6 +1,5 @@
 // reducers/couponReducer.js
 
-import { accordionActionsClasses } from "@mui/material";
 import {
   CREATE_COUPON_REQUEST,
   CREATE_COUPON_SUCCESS,
