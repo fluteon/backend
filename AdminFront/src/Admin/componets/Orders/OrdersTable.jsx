@@ -118,22 +118,18 @@ useEffect(() => {
   const handleConfirmedOrder = (orderId, index) => {
     handleUpdateStatusMenuClose(index);
     dispatch(confirmOrder(orderId));
-    setOrderStatus("CONFIRMED")
   };
   const handleShippedOrder = (orderId,index) => {
     handleUpdateStatusMenuClose(index);
     dispatch(shipOrder(orderId))
-    setOrderStatus("ShIPPED")
   };
 const handleOutForDeliveryOrder = (orderId, index) => {
   handleUpdateStatusMenuClose(index);
   dispatch(outForDeliveryOrder(orderId));
-  setOrderStatus("OUTFORDELIVERY");
 };
   const handleDeliveredOrder = (orderId,index) => {
     handleUpdateStatusMenuClose(index);
     dispatch(deliveredOrder(orderId))
-    setOrderStatus("DELIVERED")
   };
   const handleDeleteOrder = (orderId) => {
     handleUpdateStatusMenuClose();
