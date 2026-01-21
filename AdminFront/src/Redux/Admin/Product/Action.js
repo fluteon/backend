@@ -1,4 +1,3 @@
-import axios from "axios";
 import {
   UPDATE_PRODUCT_REQUEST,
   UPDATE_PRODUCT_SUCCESS,
