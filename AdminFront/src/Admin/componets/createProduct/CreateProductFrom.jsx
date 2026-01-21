@@ -868,7 +868,7 @@ useEffect(() => {
   anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
 >
   <Alert onClose={() => setSuccess(false)} severity="success" sx={{ width: '100%' }}>
-    {successMessage}
+    Product saved successfully!
   </Alert>
 </Snackbar>
 
