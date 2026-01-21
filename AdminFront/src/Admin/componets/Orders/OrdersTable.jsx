@@ -40,20 +40,15 @@ import { motion } from 'framer-motion';
 
 
 import {  getPaymentHistory}  from "../../../Redux/Customers/Payment/Action"
-import { configure } from "@testing-library/react";
 
 const OrdersTable = () => {
-  const baseUrl = process.env.REACT_APP_API_BASE_URL
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({ status: "", sort: "" });
-  const [orderStatus, setOrderStatus] = useState("");
-  const [paymentHistory, setPaymentHistory] = useState([]);
    const dispatch = useDispatch();
   const { history, loading, error } = useSelector((store) => store.payment); // from your combined reducer
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const { adminsOrder } = useSelector((store) => store);
-  const { orders, totalPages, currentPage } = adminsOrder
+  const { totalPages } = adminsOrder
   const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -98,6 +93,7 @@ useEffect(() => {
   formData.sort,
   adminsOrder.delivered,
   adminsOrder.shipped,
+  dispatch,
   adminsOrder.confirmed,
   adminsOrder.returned,
 ]);
@@ -155,11 +151,6 @@ useEffect(() => {
   return () => (document.body.style.overflow = 'auto');
 }, [selectedOrder, showPaymentModal]);
 
-
-const handleOpenReturnModal = (order) => {
-  setSelectedOrder(order);
-  setShowReturnModal(true);
-};
 
 const handleSubmitReturnDecision = () => {
   const payload = {
