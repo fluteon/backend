@@ -75,7 +75,7 @@ const UpdateProductForm = () => {
 
   useEffect(() => {
     dispatch(findProductById({productId}));
-  }, [productId]);
+  }, [productId, dispatch]);
 
   useEffect(()=>{
     if(customersProduct.product){
@@ -85,7 +85,7 @@ const UpdateProductForm = () => {
 }
     }
 
-  },[customersProduct.product])
+  },[customersProduct.product, productData])
 
   return (
     <Fragment className="createProductContainer ">
