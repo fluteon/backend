@@ -101,10 +101,14 @@ const getAllUsers = async ({ pageNumber = 1, pageSize = 10 }) => {
   const totalUsers = await User.countDocuments();
 
   const users = await User.find()
+    .sort({ createdAt: -1 }) // Sort by newest first
     .skip((pageNumber - 1) * pageSize)
-    .limit(pageSize);
+    .limit(pageSize)
+    .select('firstName lastName email createdAt'); // Select only needed fields
 
   const totalPages = Math.ceil(totalUsers / pageSize);
+
+  console.log(`📊 getAllUsers - Page: ${pageNumber}, PageSize: ${pageSize}, Skip: ${(pageNumber - 1) * pageSize}, Users returned: ${users.length}, Total: ${totalUsers}`);
 
   return {
     users,

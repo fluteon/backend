@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api, { API_BASE_URL } from '../../config/api';
 import {
   REGISTER_REQUEST,
   REGISTER_SUCCESS,
@@ -14,7 +14,6 @@ import {
   GET_ALL_USERS_FAILURE,
   LOGOUT
 } from './ActionTypes';
-import api, { API_BASE_URL } from '../../config/api';
 
 // Register action creators
 const registerRequest = () => ({ type: REGISTER_REQUEST });
@@ -24,7 +23,7 @@ const registerFailure = error => ({ type: REGISTER_FAILURE, payload: error });
 export const register = userData => async dispatch => {
   dispatch(registerRequest());
   try {
-    const response=await axios.post(`${API_BASE_URL}/auth/signup`, userData);
+    const response=await api.post(`/auth/signup`, userData);
     const user = response.data;
     if(user.jwt) localStorage.setItem("jwt",user.jwt)
     console.log("registerr :",user)
@@ -45,7 +44,7 @@ export const login = userData => async dispatch => {
     console.log('📡 Sending login request to:', `${API_BASE_URL}/auth/signin`);
     console.log('📦 Request data:', userData);
     
-    const response = await axios.post(`${API_BASE_URL}/auth/signin`, userData);
+    const response = await api.post(`/auth/signin`, userData);
     const user = response.data;
     
     console.log('✅ Login response:', user);
@@ -74,11 +73,7 @@ export const getUser = (token) => {
   return async (dispatch) => {
     dispatch({ type: GET_USER_REQUEST });
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/users/profile`,{
-        headers:{
-          "Authorization":`Bearer ${token}`
-        }
-      });
+      const response = await api.get(`/api/users/profile`);
       const user = response.data;
       dispatch({ type: GET_USER_SUCCESS, payload: user });
       console.log("req User ",user)
@@ -112,15 +107,18 @@ export const allUser = (page = 1, limit = 10) => {
     dispatch({ type: GET_ALL_USERS_REQUEST });
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/users?page=${page}&limit=${limit}`);
+      const response = await api.get(`/api/users?page=${page}&limit=${limit}`);
 
       const { users, totalPages, currentPage } = response.data;
+
+      console.log("📊 All users fetched:", { users: users.length, totalPages, currentPage, page });
 
       dispatch({
         type: GET_ALL_USERS_SUCCESS,
         payload: { users, totalPages, currentPage },
       });
     } catch (err) {
+      console.error("❌ Error fetching all users:", err.response?.data || err.message);
       const errorMessage = err.response?.data?.message || err.message;
       dispatch({ type: GET_ALL_USERS_FAILURE, payload: errorMessage });
     }

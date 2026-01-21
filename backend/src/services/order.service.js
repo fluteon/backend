@@ -1,6 +1,8 @@
 const Address = require("../models/address.model.js");
 const Order = require("../models/order.model.js");
 const OrderItem = require("../models/orderItems.js");
+const Product = require("../models/product.model.js");
+const User = require("../models/user.model.js");
 const cartService = require("../services/cart.service.js");
 const CartItem = require("../models/cartItem.model.js");
 const mongoose = require("mongoose");
@@ -206,10 +208,6 @@ async function outForDelivery(orderId) {
   return await order.save();
 }
 
-
-const Product = require("../models/product.model"); // Make sure it's imported
-const User = require("../models/user.model.js");
-
 async function deliveredOrder(orderId) {
   const order = await findOrderById(orderId);
   if (!order) throw new Error("Order not found");
@@ -406,14 +404,13 @@ async function deleteOrder(orderId) {
 
 
 async function getAdminDashboardOverview() {
-  const customerCount = await mongoose.model("users").countDocuments();
+  const customerCount = await User.countDocuments();
   const productCount = await Product.countDocuments();
-const recentUsers = await mongoose
-  .model("users")
+  const recentUsers = await User
   .find({})
   .sort({ createdAt: -1 }) // Most recent first
   .limit(5)
-  .select("name email image createdAt"); // Select only required fields
+  .select("firstName lastName email createdAt"); // Select only required fields
 
 
   const recentOrders = await Order.find()

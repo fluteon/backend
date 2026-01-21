@@ -236,7 +236,30 @@ const handleSubmitReturnDecision = () => {
         <p><strong>Total Price:</strong> ₹{selectedOrder.totalPrice}</p>
         <p><strong>Discounted Price:</strong> ₹{selectedOrder.totalDiscountedPrice}</p>
         <p><strong>Payment ID:</strong> {selectedOrder.paymentDetails?.paymentId}</p>
-        <p><strong>Payment Method:</strong> {selectedOrder.paymentDetails?.paymentMethod}</p>
+        <p>
+          <strong>Payment Method:</strong>{" "}
+          <Chip
+            label={selectedOrder.paymentDetails?.paymentMethod || "N/A"}
+            size="small"
+            color={selectedOrder.paymentDetails?.paymentMethod === "COD" ? "warning" : "primary"}
+            sx={{ fontWeight: "bold" }}
+          />
+        </p>
+        <p>
+          <strong>Payment Status:</strong>{" "}
+          <Chip
+            label={selectedOrder.paymentDetails?.paymentStatus || "N/A"}
+            size="small"
+            color={
+              selectedOrder.paymentDetails?.paymentStatus === "COMPLETED" 
+                ? "success" 
+                : selectedOrder.paymentDetails?.paymentStatus === "PENDING"
+                ? "warning"
+                : "default"
+            }
+            sx={{ fontWeight: "bold" }}
+          />
+        </p>
       </div>
       <hr className="my-4" />
       {/* Shipping Info */}
@@ -360,9 +383,33 @@ const handleSubmitReturnDecision = () => {
     <li key={payment._id} className="border-b pb-2">
       <p><strong>Order ID:</strong> {payment.order?._id || payment.order}</p>
       <p><strong>Payment ID:</strong> {payment.paymentId}</p>
-      <p><strong>Status:</strong> {payment.status}</p>
+      <p>
+        <strong>Status:</strong>{" "}
+        <Chip 
+          label={payment.status} 
+          size="small" 
+          color={
+            payment.status === "COMPLETED" 
+              ? "success" 
+              : payment.status === "PENDING"
+              ? "warning"
+              : "default"
+          }
+          sx={{ fontWeight: "bold", marginLeft: "8px" }}
+        />
+      </p>
       <p><strong>Amount:</strong> ₹{payment.amount}</p>
       <p><strong>Paid At:</strong> {new Date(payment.paidAt).toLocaleString()}</p>
+      
+      {/* Show COD indicator if payment ID contains COD */}
+      {payment.paymentId.includes("COD") && (
+        <Chip 
+          label="Cash on Delivery" 
+          size="small" 
+          color="warning" 
+          sx={{ marginTop: "8px", fontWeight: "bold" }} 
+        />
+      )}
       
       {/* Show user snapshot */}
       {payment.userSnapshot && (
@@ -660,6 +707,20 @@ const handleSubmitReturnDecision = () => {
               <Typography variant="caption" sx={{ opacity: 0.6 }}>
                 {item.orderItems.map(o => o.product?.brand).filter(Boolean).join(", ")}
               </Typography>
+              {/* COD Badge */}
+              {item.paymentDetails?.paymentMethod === "COD" && (
+                <Chip 
+                  label="COD" 
+                  size="small" 
+                  color="warning" 
+                  sx={{ 
+                    marginTop: "4px", 
+                    fontSize: "0.7rem",
+                    height: "20px",
+                    fontWeight: "bold"
+                  }} 
+                />
+              )}
             </Box>
           </TableCell>
 

@@ -41,7 +41,7 @@ const CustomersTable = ({ customers = [] }) => {
           <TableHead>
             <TableRow>
               <TableCell>Image</TableCell>
-              {/* <TableCell>Name</TableCell> */}
+              <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
             </TableRow>
           </TableHead>
@@ -49,9 +49,11 @@ const CustomersTable = ({ customers = [] }) => {
             {recentCustomers.map((item, index) => (
               <TableRow hover key={index} sx={{ '&:last-of-type td, &:last-of-type th': { border: 0 } }}>
                 <TableCell>
-                  <Avatar alt={item.name} src={item.image || "/default-avatar.png"} />
+                  <Avatar alt={`${item.firstName} ${item.lastName}`} src={item.image || "/default-avatar.png"}>
+                    {item.firstName?.[0]}{item.lastName?.[0]}
+                  </Avatar>
                 </TableCell>
-                {/* <TableCell>{item.name}</TableCell> */}
+                <TableCell>{`${item.firstName || ''} ${item.lastName || ''}`}</TableCell>
                 <TableCell>{item.email}</TableCell>
               </TableRow>
             ))}

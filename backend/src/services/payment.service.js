@@ -190,4 +190,89 @@ const getUserPaymentHistory = async (userId, orderId = null) => {
   }
 };
 
-module.exports={createPaymentLink,updatePaymentInformation,getUserPaymentHistory,}
+// ✅ New function for Cash on Delivery
+const createCODOrder = async (orderId, usedSuperCoins = 0, couponDiscount = 0) => {
+  try {
+    const order = await orderService.findOrderById(orderId);
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
+    const existingPayment = await PaymentInformation.findOne({ order: order._id });
+    if (existingPayment) {
+      throw new Error("Payment already exists for this order");
+    }
+
+    const user = await User.findById(order.user);
+    if (!user) {
+      throw new Error("User not found for this order");
+    }
+
+    // 🔢 Calculate final amount
+    const discountFromCoins = usedSuperCoins * 1;
+    const basePrice = order.totalDiscountedPrice || 0;
+    const finalAmount = Math.max(basePrice - discountFromCoins - couponDiscount, 0);
+
+    console.log("🧾 COD Order Summary:");
+    console.log("Base Price:", basePrice);
+    console.log("Used Super Coins:", usedSuperCoins, "→ ₹", discountFromCoins);
+    console.log("Coupon Discount:", couponDiscount);
+    console.log("➡️ Final COD Amount:", finalAmount);
+
+    // 💾 Save to order
+    order.usedSuperCoins = usedSuperCoins;
+    order.couponDiscount = couponDiscount;
+    await order.save();
+
+    // ✅ Deduct usedSuperCoins now
+    if (usedSuperCoins && usedSuperCoins > 0) {
+      if (user.superCoins < usedSuperCoins) {
+        throw new Error("User doesn't have enough Super Coins to deduct");
+      }
+      user.superCoins -= usedSuperCoins;
+      await user.save();
+      console.log(`✅ Deducted ${usedSuperCoins} Super Coins from user ${user._id}`);
+    }
+
+    // ✅ Create payment info for COD
+    const paymentInfo = new PaymentInformation({
+      user: user._id,
+      userSnapshot: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        mobile: user.mobile,
+      },
+      order: order._id,
+      paymentId: `COD_${order._id}_${Date.now()}`,
+      status: "PENDING", // COD is pending until delivery
+      amount: finalAmount,
+      paidAt: new Date(),
+    });
+
+    await paymentInfo.save();
+    user.paymentInformation.push(paymentInfo._id);
+    await user.save();
+
+    // ✅ Update order status with COD payment details
+    await orderService.placedOrder(orderId, {
+      paymentId: paymentInfo.paymentId,
+      method: "COD",
+      transactionId: `COD_${order._id}`,
+    });
+
+    console.log("✅ COD Order placed successfully");
+
+    return {
+      message: "COD Order placed successfully",
+      orderId: order._id,
+      paymentMethod: "COD",
+      amount: finalAmount,
+    };
+  } catch (error) {
+    console.error("❌ Error creating COD order:", error.message);
+    throw new Error(error.message);
+  }
+};
+
+module.exports={createPaymentLink,updatePaymentInformation,getUserPaymentHistory,createCODOrder,}

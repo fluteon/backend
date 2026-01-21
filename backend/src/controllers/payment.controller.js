@@ -31,7 +31,16 @@ const PaymentInformation = require("../models/payment.information.js");
 const createPaymentLink = async (req, res) => {
   try {
     const usedSuperCoins = req.body.usedSuperCoins || 0;
-    const couponDiscount = req.body.couponDiscount || 0; // 👈 Add this
+    const couponDiscount = req.body.couponDiscount || 0;
+    const paymentMethod = req.body.paymentMethod; // Check if COD
+
+    // ✅ Handle COD separately
+    if (paymentMethod === "COD") {
+      const codResult = await paymentService.createCODOrder(req.params.id, usedSuperCoins, couponDiscount);
+      return res.status(200).json(codResult);
+    }
+
+    // ✅ Handle online payment (Razorpay)
     const paymentLink = await paymentService.createPaymentLink(req.params.id, usedSuperCoins, couponDiscount);
     return res.status(200).json(paymentLink);
   } catch (error) {

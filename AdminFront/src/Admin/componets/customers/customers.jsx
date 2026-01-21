@@ -22,18 +22,22 @@ const page = Number(searchParams.get("page")) || 1;
 const dispatch = useDispatch()
   const { userList, isLoading, currentPage, totalPages } = useSelector((store) => store.auth);
 
-console.log("customers...",userList)
+console.log("👥 Customers Page - Redux State:", {
+  userListCount: userList?.length,
+  currentPage,
+  totalPages,
+  isLoading,
+  page,
+  userList: userList?.slice(0, 2) // Show first 2 users for debugging
+});
   const navigate=useNavigate();
 
 function handlePaginationChange(event, value) {
   setSearchParams({ page: value.toString() });
 }
 
-  //   useEffect(() => {
-  //   dispatch(allUser());
-  // }, [dispatch]);
-
   useEffect(() => {
+  console.log("🔄 Fetching users for page:", page);
   dispatch(allUser(page)); // <-- pass page number to action
 }, [dispatch, page]);
   return (
@@ -57,15 +61,15 @@ function handlePaginationChange(event, value) {
           </TableHead>
           <TableBody>
             {userList?.map((item,index) => (
-              <TableRow hover key={item.name} sx={{ '&:last-of-type td, &:last-of-type th': { border: 0 } }}>
-                <TableCell>{index+1}</TableCell>
-                <TableCell> <Avatar alt={item.name} src={item.image} /> </TableCell>
-      <TableCell>{`${item.firstName} ${item.lastName}`}</TableCell>
+              <TableRow hover key={item._id || index} sx={{ '&:last-of-type td, &:last-of-type th': { border: 0 } }}>
+                <TableCell>{(page - 1) * 10 + index + 1}</TableCell>
+                <TableCell>
+                  <Avatar alt={`${item.firstName} ${item.lastName}`} src={item.image}>
+                    {item.firstName?.[0]}{item.lastName?.[0]}
+                  </Avatar>
+                </TableCell>
+                <TableCell>{`${item.firstName} ${item.lastName}`}</TableCell>
                 <TableCell>{item.email}</TableCell>
-                
-                
-               
-               
               </TableRow>
             ))}
           </TableBody>

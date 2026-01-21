@@ -29,7 +29,9 @@ const getUserProfile=async (req,res)=>{
 
 const getAllUsers = async (req, res) => {
   try {
-    const { pageNumber, pageSize } = req.query;
+    // Accept both page/limit (from AdminFront) and pageNumber/pageSize
+    const pageNumber = req.query.pageNumber || req.query.page || 1;
+    const pageSize = req.query.pageSize || req.query.limit || 10;
 
     const result = await userService.getAllUsers({ pageNumber, pageSize });
 
