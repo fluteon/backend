@@ -538,7 +538,7 @@ import {
 import "./CreateProductForm.css";
 import { useDispatch } from "react-redux";
 import { createProduct } from "../../../Redux/Customers/Product/Action";
-import api, { API_BASE_URL } from "../../../config/api";
+import { API_BASE_URL } from "../../../config/api";
 import { useLocation } from "react-router-dom";
 import { updateProduct } from "../../../Redux/Admin/Product/Action";
 import Snackbar from '@mui/material/Snackbar';

@@ -72,7 +72,7 @@ const UpdateProductForm = () => {
 }
     }
 
-  },[customersProduct.product, productData])
+  },[customersProduct.product, productData, dispatch])
 
   return (
     <Fragment className="createProductContainer ">

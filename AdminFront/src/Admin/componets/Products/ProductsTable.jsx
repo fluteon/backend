@@ -20,7 +20,6 @@ import {
 } from "@mui/material";
 
 import React from "react";
-import { dressPage1 } from "../../../Data/dress/page1";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useEffect } from "react";
@@ -31,7 +30,6 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import LowStockModal from "../Orders/LowStockModal";
 
 const ProductsTable = () => {
-  const baseUrl = process.env.REACT_APP_API_BASE_URL
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -78,7 +76,7 @@ const handlePaginationChange = (event, value) => {
       stock: availability,
     };
     dispatch(findProducts(data));
-  }, [availability, category, sort,page,customersProduct.deleteProduct]);
+  }, [availability, category, sort,page,customersProduct.deleteProduct, dispatch]);
 
 const handleFilterChange = (e, sectionId) => {
   const newValue = e.target.value;
