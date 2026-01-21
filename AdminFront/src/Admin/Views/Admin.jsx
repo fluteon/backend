@@ -7,7 +7,7 @@ import SalesOverview from "../tables/WeeklyOverview"; // Renamed for clarity
 import TotalEarning from "../tables/TotalEarning";
 import CardStatsVertical from "../../Styles/CardStatsVertical";
 import CustomersTable from "../tables/CustomersTable";
-import { ThemeProvider, createTheme } from "@mui/material";
+import { ThemeProvider } from "@mui/material";
 import { customTheme } from "../them/customeThem";
 import "./Admin.css";
 import RecentlyAddeddProducts from "../tables/RecentlyAddeddProducts";
@@ -21,7 +21,7 @@ import { useEffect } from "react";
 
 const Dashboard = () => {
   const dispatch = useDispatch();
-  const { overview, loading, error } = useSelector((state) => state.adminsOrder);
+  const { overview } = useSelector((state) => state.adminsOrder);
 
   useEffect(() => {
     dispatch(fetchDashboardOverview());

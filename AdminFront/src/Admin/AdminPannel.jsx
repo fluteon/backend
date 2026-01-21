@@ -29,7 +29,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { getUser, logout } from "../Redux/Auth/Action";
 import { useEffect } from "react";
 import { deepPurple } from "@mui/material/colors";
-import SellIcon from '@mui/icons-material/Sell';
 import Coupan from "./componets/Coupan/Coupan";
 
 const drawerWidth = 240;
@@ -65,7 +64,7 @@ export default function AdminPannel() {
     if (jwt) {
       dispatch(getUser(jwt));
     }
-  }, [jwt]);
+  }, [jwt, dispatch]);
 
   const drawer = (
     <Box
