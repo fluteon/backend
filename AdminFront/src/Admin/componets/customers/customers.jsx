@@ -1,19 +1,17 @@
 // ** MUI Imports
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
-import Chip from '@mui/material/Chip'
 import Table from '@mui/material/Table'
 import TableRow from '@mui/material/TableRow'
 import TableHead from '@mui/material/TableHead'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
-import Typography from '@mui/material/Typography'
 import TableContainer from '@mui/material/TableContainer'
 import { Avatar, CardHeader, Pagination } from '@mui/material'
 import {allUser} from "../../../Redux/Auth/Action"
 import { useDispatch, useSelector } from 'react-redux'
 import { useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 
 
 const Customers = () => {
@@ -30,7 +28,6 @@ console.log("👥 Customers Page - Redux State:", {
   page,
   userList: userList?.slice(0, 2) // Show first 2 users for debugging
 });
-  const navigate=useNavigate();
 
 function handlePaginationChange(event, value) {
   setSearchParams({ page: value.toString() });

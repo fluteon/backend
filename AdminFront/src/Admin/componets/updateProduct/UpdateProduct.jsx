@@ -43,7 +43,6 @@ const UpdateProductForm = () => {
     description: "",
   });
   const dispatch = useDispatch();
-  const jwt = localStorage.getItem("jwt");
   const { productId } = useParams();
   const { customersProduct } = useSelector((store) => store);
 
@@ -52,18 +51,6 @@ const UpdateProductForm = () => {
     setProductData((prevState) => ({
       ...prevState,
       [name]: value,
-    }));
-  };
-
-  const handleSizeChange = (e, index) => {
-    let { name, value } = e.target;
-    name === "size_quantity" ? (name = "quantity") : (name = e.target.name);
-
-    const sizes = [...productData.size];
-    sizes[index][name] = value;
-    setProductData((prevState) => ({
-      ...prevState,
-      size: sizes,
     }));
   };
 

@@ -595,7 +595,6 @@ const productToUpdate = location.state?.product;
   const [images, setImages] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
 const [success, setSuccess] = useState(false);
-const [successMessage, setSuccessMessage] = useState("");
 
   const [productData, setProductData] = useState({
     images: "",
@@ -649,7 +648,6 @@ useEffect(() => {
       quantity,
       description,
       sizes,
-      thirdLavelCategory,
       imageUrl,
     } = productToUpdate;
 
