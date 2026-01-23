@@ -146,6 +146,11 @@ async function createOrder(user, shippAddress, usedSuperCoins = 0) {
     createdAt: new Date(),
   });
 
+  // ✅ Clear coupon from cart after order creation to prevent auto-application on next order
+  cart.couponCode = null;
+  cart.couponDiscount = 0;
+  await cart.save();
+
   return await createdOrder.save();
 }
 
