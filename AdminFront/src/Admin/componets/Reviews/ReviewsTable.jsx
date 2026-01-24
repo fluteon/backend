@@ -18,7 +18,6 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Chip,
   Rating,
   CircularProgress,
   Alert,
