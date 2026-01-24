@@ -305,6 +305,32 @@ if (status === "RETURN_APPROVED") {
   order.orderStatus = "RETURNED";
   order.returnApprovedAt = new Date();
    order.returnTime = returnTime;
+
+  // 🪙 Deduct earned SuperCoins when return is approved
+  if (order.earnedSuperCoins > 0) {
+    console.log("🔄 Deducting", order.earnedSuperCoins, "SuperCoins from user", order.user._id);
+    
+    const user = await User.findById(order.user._id);
+    if (user) {
+      // Ensure we don't go negative
+      user.superCoins = Math.max(0, user.superCoins - order.earnedSuperCoins);
+      await user.save();
+      console.log("✅ SuperCoins deducted. New balance:", user.superCoins);
+    }
+  }
+
+  // 💰 Refund used SuperCoins if customer used coins for this order
+  if (order.usedSuperCoins > 0) {
+    console.log("💰 Refunding", order.usedSuperCoins, "SuperCoins to user", order.user._id);
+    
+    const user = await User.findById(order.user._id);
+    if (user) {
+      user.superCoins += order.usedSuperCoins;
+      await user.save();
+      console.log("✅ SuperCoins refunded. New balance:", user.superCoins);
+    }
+  }
+
 } else if (status === "RETURN_REJECTED") {
   order.orderStatus = "RETURN_REJECTED";
   order.returnRejectedAt = new Date();
