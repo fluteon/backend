@@ -30,6 +30,7 @@ import { getUser, logout } from "../Redux/Auth/Action";
 import { useEffect } from "react";
 import { deepPurple } from "@mui/material/colors";
 import Coupan from "./componets/Coupan/Coupan";
+import ReviewsTable from "./componets/Reviews/ReviewsTable";
 
 const drawerWidth = 240;
 
@@ -38,6 +39,7 @@ const menu = [
   { name: "Products", path: "/products" },
   { name: "Customers", path: "/customers" },
   { name: "Orders", path: "/orders" },
+  { name: "Reviews", path: "/reviews" },
   { name: "Add Product", path: "/product/create" },
   { name: "Add Coupan Code", path: "/coupan"}
 ];
@@ -164,6 +166,7 @@ export default function AdminPannel() {
   <Route path="products" element={<ProductsTable />} />
   <Route path="orders" element={<OrdersTable />} />
   <Route path="customers" element={<Customers />} />
+  <Route path="reviews" element={<ReviewsTable />} />
   <Route path="demo" element={<DemoAdmin />} />
   <Route path="coupan" element={<Coupan />} />
 </Routes>

@@ -6,5 +6,8 @@ const reviewController = require("../controllers/review.controller.js");
 router.post("/create",authenticate,reviewController.createReview);
 router.get("/product/:productId",authenticate,reviewController.getAllReview);
 
+// Admin routes
+router.get("/all",authenticate,reviewController.getAllReviewsAdmin);
+router.delete("/:reviewId",authenticate,reviewController.deleteReview);
 
 module.exports=router;

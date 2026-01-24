@@ -82,8 +82,29 @@ async function getAllReview(productId) {
   };
 }
 
+async function getAllReviewsAdmin() {
+  const reviews = await Review.find()
+    .populate("user", "firstName lastName email")
+    .populate("product", "title imageUrl")
+    .sort({ createdAt: -1 });
+  
+  return reviews;
+}
+
+async function deleteReview(reviewId) {
+  const review = await Review.findById(reviewId);
+  
+  if (!review) {
+    throw new Error("Review not found with id " + reviewId);
+  }
+  
+  await Review.findByIdAndDelete(reviewId);
+  return { message: "Review deleted successfully" };
+}
 
 module.exports = {
   createReview,
   getAllReview,
+  getAllReviewsAdmin,
+  deleteReview,
 };

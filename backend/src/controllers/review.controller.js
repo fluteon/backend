@@ -31,4 +31,25 @@ const getAllReview = async (req, res) => {
   }
 };
 
-module.exports = {createReview,getAllReview}
+const getAllReviewsAdmin = async (req, res) => {
+  try {
+    const reviews = await reviewService.getAllReviewsAdmin();
+    return res.status(200).send(reviews);
+  } catch (error) {
+    console.log("error --- ", error.message);
+    return res.status(500).json({ error: 'Failed to fetch reviews' });
+  }
+};
+
+const deleteReview = async (req, res) => {
+  const reviewId = req.params.reviewId;
+  try {
+    await reviewService.deleteReview(reviewId);
+    return res.status(200).json({ message: 'Review deleted successfully' });
+  } catch (error) {
+    console.log("error --- ", error.message);
+    return res.status(500).json({ error: 'Failed to delete review' });
+  }
+};
+
+module.exports = {createReview,getAllReview,getAllReviewsAdmin,deleteReview}
