@@ -22,4 +22,27 @@ api.interceptors.request.use(
   }
 );
 
+// Add response interceptor to handle JWT expiration
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    // Handle JWT expiration
+    if (error.response?.status === 401 || error.response?.data?.message?.includes('jwt expired')) {
+      console.error('JWT token expired or invalid');
+      
+      // Clear expired token
+      localStorage.removeItem('jwt');
+      
+      // Redirect to login page
+      window.location.href = '/';
+      
+      return Promise.reject(new Error('Session expired. Please login again.'));
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
 export default api;

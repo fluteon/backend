@@ -52,7 +52,14 @@ const ReviewsTable = () => {
     } catch (err) {
       console.error('Error fetching reviews:', err);
       console.error('Error response:', err.response);
-      const errorMsg = err.response?.data?.error || err.message || 'Failed to fetch reviews';
+      
+      // Handle JWT expiration specifically
+      if (err.message?.includes('Session expired')) {
+        setError('Your session has expired. Redirecting to login...');
+        return; // Interceptor will handle redirect
+      }
+      
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to fetch reviews';
       setError(errorMsg);
     } finally {
       setLoading(false);
