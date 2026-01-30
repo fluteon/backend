@@ -390,6 +390,25 @@ async function getComplementaryProducts(categoryNames, limit = 6) {
   try {
     console.log("🎯 getComplementaryProducts called with:", { categoryNames, limit });
     
+    // If no categories provided, return trending products
+    if (!categoryNames || categoryNames.length === 0) {
+      console.log("⚡ No categories provided, returning trending products");
+      const trendingProducts = await Product.find({})
+        .populate({
+          path: "category",
+          populate: {
+            path: "parentCategory",
+            populate: {
+              path: "parentCategory",
+            },
+          },
+        })
+        .limit(limit)
+        .sort({ numRatings: -1, createdAt: -1 });
+      console.log("📈 Returning", trendingProducts.length, "trending products");
+      return trendingProducts;
+    }
+    
     // Complementary mapping
     const complementaryMap = {
       'Shirt': ['Pant', 'Jeans', 'Trousers'],
@@ -433,7 +452,7 @@ async function getComplementaryProducts(categoryNames, limit = 6) {
           },
         })
         .limit(limit)
-        .sort({ numRatings: -1 });
+        .sort({ numRatings: -1, createdAt: -1 });
       console.log("📈 Returning", trendingProducts.length, "trending products");
       return trendingProducts;
     }
@@ -444,6 +463,25 @@ async function getComplementaryProducts(categoryNames, limit = 6) {
     });
 
     console.log("🏷️ Found", categories.length, "matching categories in DB");
+    
+    if (categories.length === 0) {
+      console.log("⚠️ No matching categories in DB, returning trending products");
+      const trendingProducts = await Product.find({})
+        .populate({
+          path: "category",
+          populate: {
+            path: "parentCategory",
+            populate: {
+              path: "parentCategory",
+            },
+          },
+        })
+        .limit(limit)
+        .sort({ numRatings: -1, createdAt: -1 });
+      console.log("📈 Returning", trendingProducts.length, "trending products");
+      return trendingProducts;
+    }
+    
     const categoryIds = categories.map(cat => cat._id);
     console.log("🆔 Category IDs:", categoryIds);
 
@@ -467,7 +505,26 @@ async function getComplementaryProducts(categoryNames, limit = 6) {
     return complementaryProducts;
   } catch (error) {
     console.error("❌ Error in getComplementaryProducts:", error);
-    throw new Error(error.message);
+    // Return trending products as fallback on error
+    try {
+      const fallbackProducts = await Product.find({})
+        .populate({
+          path: "category",
+          populate: {
+            path: "parentCategory",
+            populate: {
+              path: "parentCategory",
+            },
+          },
+        })
+        .limit(limit)
+        .sort({ numRatings: -1, createdAt: -1 });
+      console.log("🔄 Returning", fallbackProducts.length, "fallback products");
+      return fallbackProducts;
+    } catch (fallbackError) {
+      console.error("❌ Fallback also failed:", fallbackError);
+      return []; // Return empty array as last resort
+    }
   }
 }
 
