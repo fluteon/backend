@@ -353,6 +353,109 @@ async function searchProducts(query) {
   return products;
 }
 
+// Get similar products based on same category
+async function getSimilarProducts(productId, limit = 8) {
+  try {
+    const product = await Product.findById(productId).populate('category');
+    
+    if (!product) {
+      throw new Error('Product not found');
+    }
+
+    // Find products in the same category, excluding the current product
+    const similarProducts = await Product.find({
+      category: product.category._id,
+      _id: { $ne: productId }
+    })
+    .populate({
+      path: "category",
+      populate: {
+        path: "parentCategory",
+        populate: {
+          path: "parentCategory",
+        },
+      },
+    })
+    .limit(limit)
+    .sort({ numRatings: -1, createdAt: -1 }); // Sort by ratings and recency
+
+    return similarProducts;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
+// Get complementary products for cart (cross-sell logic)
+async function getComplementaryProducts(categoryNames, limit = 6) {
+  try {
+    // Complementary mapping
+    const complementaryMap = {
+      'Shirt': ['Pant', 'Jeans', 'Trousers'],
+      'T-Shirt': ['Jeans', 'Shorts', 'Pant'],
+      'Kurta': ['Churidar', 'Pant', 'Pajama'],
+      'Top': ['Jeans', 'Skirt', 'Trousers'],
+      'Dress': ['Shoes', 'Jacket', 'Accessories'],
+      'Saree': ['Blouse', 'Petticoat'],
+      'Jeans': ['Shirt', 'T-Shirt', 'Top'],
+      'Pant': ['Shirt', 'T-Shirt'],
+      'Shoes': ['Socks', 'Shoe Care']
+    };
+
+    // Get complementary category names based on cart items
+    const complementaryCategories = new Set();
+    
+    categoryNames.forEach(categoryName => {
+      const complements = complementaryMap[categoryName];
+      if (complements) {
+        complements.forEach(cat => complementaryCategories.add(cat));
+      }
+    });
+
+    if (complementaryCategories.size === 0) {
+      // If no specific complements, return trending products
+      return await Product.find({})
+        .populate({
+          path: "category",
+          populate: {
+            path: "parentCategory",
+            populate: {
+              path: "parentCategory",
+            },
+          },
+        })
+        .limit(limit)
+        .sort({ numRatings: -1 });
+    }
+
+    // Find categories that match complementary names
+    const categories = await Category.find({
+      name: { $in: Array.from(complementaryCategories) }
+    });
+
+    const categoryIds = categories.map(cat => cat._id);
+
+    // Find products in complementary categories
+    const complementaryProducts = await Product.find({
+      category: { $in: categoryIds }
+    })
+    .populate({
+      path: "category",
+      populate: {
+        path: "parentCategory",
+        populate: {
+          path: "parentCategory",
+        },
+      },
+    })
+    .limit(limit)
+    .sort({ numRatings: -1, createdAt: -1 });
+
+    return complementaryProducts;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
 module.exports = {
   createProduct,
   deleteProduct,
@@ -360,5 +463,7 @@ module.exports = {
   getAllProducts,
   findProductById,
   createMultipleProduct,
-  searchProducts
+  searchProducts,
+  getSimilarProducts,
+  getComplementaryProducts
 };

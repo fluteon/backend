@@ -96,6 +96,30 @@ const searchProduct = async (req, res) => {
   }
 };
 
+// Get similar products based on category
+const getSimilarProducts = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const limit = parseInt(req.query.limit) || 8;
+    const products = await productService.getSimilarProducts(productId, limit);
+    res.status(200).json(products);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// Get complementary products for cart
+const getComplementaryProducts = async (req, res) => {
+  try {
+    const { categories } = req.body; // Array of category names from cart items
+    const limit = parseInt(req.query.limit) || 6;
+    const products = await productService.getComplementaryProducts(categories, limit);
+    res.status(200).json(products);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 
 module.exports = {
   createProduct,
@@ -105,6 +129,8 @@ module.exports = {
   findProductById,
   findProductByCategory,
   searchProduct,
-  createMultipleProduct
+  createMultipleProduct,
+  getSimilarProducts,
+  getComplementaryProducts
 
 };
