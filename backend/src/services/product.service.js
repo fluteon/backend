@@ -388,6 +388,8 @@ async function getSimilarProducts(productId, limit = 8) {
 // Get complementary products for cart (cross-sell logic)
 async function getComplementaryProducts(categoryNames, limit = 6) {
   try {
+    console.log("🎯 getComplementaryProducts called with:", { categoryNames, limit });
+    
     // Complementary mapping
     const complementaryMap = {
       'Shirt': ['Pant', 'Jeans', 'Trousers'],
@@ -405,15 +407,22 @@ async function getComplementaryProducts(categoryNames, limit = 6) {
     const complementaryCategories = new Set();
     
     categoryNames.forEach(categoryName => {
+      console.log("🔍 Checking category:", categoryName);
       const complements = complementaryMap[categoryName];
       if (complements) {
+        console.log("✅ Found complements for", categoryName, ":", complements);
         complements.forEach(cat => complementaryCategories.add(cat));
+      } else {
+        console.log("⚠️ No complements found for", categoryName);
       }
     });
 
+    console.log("📦 All complementary categories:", Array.from(complementaryCategories));
+
     if (complementaryCategories.size === 0) {
+      console.log("⚠️ No complementary categories found, returning trending products");
       // If no specific complements, return trending products
-      return await Product.find({})
+      const trendingProducts = await Product.find({})
         .populate({
           path: "category",
           populate: {
@@ -425,6 +434,8 @@ async function getComplementaryProducts(categoryNames, limit = 6) {
         })
         .limit(limit)
         .sort({ numRatings: -1 });
+      console.log("📈 Returning", trendingProducts.length, "trending products");
+      return trendingProducts;
     }
 
     // Find categories that match complementary names
@@ -432,7 +443,9 @@ async function getComplementaryProducts(categoryNames, limit = 6) {
       name: { $in: Array.from(complementaryCategories) }
     });
 
+    console.log("🏷️ Found", categories.length, "matching categories in DB");
     const categoryIds = categories.map(cat => cat._id);
+    console.log("🆔 Category IDs:", categoryIds);
 
     // Find products in complementary categories
     const complementaryProducts = await Product.find({
@@ -450,8 +463,10 @@ async function getComplementaryProducts(categoryNames, limit = 6) {
     .limit(limit)
     .sort({ numRatings: -1, createdAt: -1 });
 
+    console.log("✅ Found", complementaryProducts.length, "complementary products");
     return complementaryProducts;
   } catch (error) {
+    console.error("❌ Error in getComplementaryProducts:", error);
     throw new Error(error.message);
   }
 }

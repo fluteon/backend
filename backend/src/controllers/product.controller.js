@@ -111,11 +111,16 @@ const getSimilarProducts = async (req, res) => {
 // Get complementary products for cart
 const getComplementaryProducts = async (req, res) => {
   try {
+    console.log("🛒 Complementary Products Request Body:", req.body);
     const { categories } = req.body; // Array of category names from cart items
     const limit = parseInt(req.query.limit) || 6;
+    console.log("📋 Categories received:", categories);
+    console.log("🔢 Limit:", limit);
     const products = await productService.getComplementaryProducts(categories, limit);
+    console.log("✅ Complementary products found:", products.length);
     res.status(200).json(products);
   } catch (error) {
+    console.error("❌ Complementary products error:", error);
     res.status(400).json({ error: error.message });
   }
 };
