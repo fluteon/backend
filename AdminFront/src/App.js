@@ -5,10 +5,11 @@ import "./App.css";
 import AdminPannel from "./Admin/AdminPannel";
 import AdminLogin from "./Admin/Auth/AdminLogin";
 import { getUser } from "./Redux/Auth/Action";
+import { auth } from "./firebase";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const jwt = localStorage.getItem('jwt');
+  const jwt = sessionStorage.getItem('jwt');
   return jwt ? children : <Navigate to="/login" replace />;
 };
 
@@ -18,7 +19,7 @@ function App() {
 
   useEffect(() => {
     const validateSession = async () => {
-      const jwt = localStorage.getItem('jwt');
+      const jwt = sessionStorage.getItem('jwt');
       
       if (jwt) {
         try {
@@ -27,7 +28,7 @@ function App() {
           console.log('✅ Session restored successfully');
         } catch (error) {
           console.error('❌ Invalid session, clearing token');
-          localStorage.removeItem('jwt');
+          sessionStorage.removeItem('jwt');
           window.location.href = '/login';
         }
       }
@@ -36,6 +37,23 @@ function App() {
     };
 
     validateSession();
+
+    // Cleanup function to clear auth on window close/unload
+    const handleBeforeUnload = () => {
+      console.log('🧹 Cleaning up auth data on window close');
+      sessionStorage.clear();
+      localStorage.clear();
+      // Sign out from Firebase
+      auth.signOut().catch(err => console.error('Firebase signout error:', err));
+    };
+
+    // Add event listener for cleanup
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // Cleanup on component unmount
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, [dispatch]);
 
   // Show loading while validating session

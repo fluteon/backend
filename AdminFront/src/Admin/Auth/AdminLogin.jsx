@@ -54,7 +54,7 @@ const AdminLogin = () => {
       await dispatch(login(userData));
       
       // Check if JWT was stored
-      const jwt = localStorage.getItem('jwt');
+      const jwt = sessionStorage.getItem('jwt');
       console.log('✅ JWT stored:', jwt ? 'Yes' : 'No');
       
       if (!jwt) {

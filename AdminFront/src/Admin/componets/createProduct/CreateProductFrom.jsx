@@ -678,7 +678,7 @@ useEffect(() => {
 
 
   const dispatch = useDispatch();
-  const jwt = localStorage.getItem("jwt");
+  const jwt = sessionStorage.getItem("jwt");
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files).slice(0, 4);

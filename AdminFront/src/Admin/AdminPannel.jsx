@@ -31,6 +31,7 @@ import { useEffect } from "react";
 import { deepPurple } from "@mui/material/colors";
 import Coupan from "./componets/Coupan/Coupan";
 import ReviewsTable from "./componets/Reviews/ReviewsTable";
+import { auth } from "../firebase";
 
 const drawerWidth = 240;
 
@@ -53,14 +54,23 @@ export default function AdminPannel() {
   const dispatch=useDispatch()
   const {auth}=useSelector(store=>store);
 
-  const handleLogout = () => {
-   
+  const handleLogout = async () => {
+    try {
+      // Sign out from Firebase
+      await auth.signOut();
+      console.log('✅ Signed out from Firebase');
+    } catch (error) {
+      console.error('❌ Firebase signout error:', error);
+    }
+    
+    // Clear all storage and dispatch logout
+    sessionStorage.clear();
+    localStorage.clear();
     dispatch(logout());
     navigate("/")
-
   };
 
-  const jwt = localStorage.getItem("jwt");
+  const jwt = sessionStorage.getItem("jwt");
 
   useEffect(() => {
     if (jwt) {

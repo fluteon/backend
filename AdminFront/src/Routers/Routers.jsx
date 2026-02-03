@@ -5,7 +5,7 @@ import AdminLogin from "../Admin/Auth/AdminLogin";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const jwt = localStorage.getItem('jwt');
+  const jwt = sessionStorage.getItem('jwt');
   return jwt ? children : <Navigate to="/admin/login" replace />;
 };
 

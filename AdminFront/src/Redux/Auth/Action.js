@@ -25,7 +25,7 @@ export const register = userData => async dispatch => {
   try {
     const response=await api.post(`/auth/signup`, userData);
     const user = response.data;
-    if(user.jwt) localStorage.setItem("jwt",user.jwt)
+    if(user.jwt) sessionStorage.setItem("jwt",user.jwt)
     console.log("registerr :",user)
     dispatch(registerSuccess(user));
   } catch (error) {
@@ -50,8 +50,8 @@ export const login = userData => async dispatch => {
     console.log('✅ Login response:', user);
     
     if(user.jwt) {
-      localStorage.setItem("jwt", user.jwt);
-      console.log('💾 JWT saved to localStorage');
+      sessionStorage.setItem("jwt", user.jwt);
+      console.log('💾 JWT saved to sessionStorage');
     } else {
       console.warn('⚠️ No JWT in response');
     }
@@ -128,6 +128,7 @@ export const allUser = (page = 1, limit = 10) => {
 export const logout = (token) => {
     return async (dispatch) => {
       dispatch({ type: LOGOUT });
+      sessionStorage.clear();
       localStorage.clear();
     };
   };
