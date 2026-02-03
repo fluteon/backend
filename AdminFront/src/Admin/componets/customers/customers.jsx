@@ -53,7 +53,7 @@ function handlePaginationChange(event, value) {
             <TableCell>Image</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
-              
+              <TableCell>Created At</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -67,6 +67,18 @@ function handlePaginationChange(event, value) {
                 </TableCell>
                 <TableCell>{`${item.firstName} ${item.lastName}`}</TableCell>
                 <TableCell>{item.email}</TableCell>
+                <TableCell>
+                  {item.createdAt 
+                    ? new Date(item.createdAt).toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
+                    : 'N/A'
+                  }
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
