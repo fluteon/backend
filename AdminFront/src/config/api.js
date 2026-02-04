@@ -10,14 +10,17 @@ const api = axios.create({
 // Add interceptor to include JWT token dynamically with every request
 api.interceptors.request.use(
   (config) => {
-    const token = sessionStorage.getItem('jwt');
+    const token = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
     
-    // Only set Content-Type to JSON if it's not already set (for FormData)
+    // Only set Content-Type to JSON if it's not already set and data is not FormData
     // When data is FormData, browser/axios will auto-set multipart/form-data with boundary
-    if (!config.headers['Content-Type'] && !(config.data instanceof FormData)) {
+    if (config.data instanceof FormData) {
+      // Let browser set Content-Type with boundary for FormData
+      delete config.headers['Content-Type'];
+    } else if (!config.headers['Content-Type']) {
       config.headers['Content-Type'] = 'application/json';
     }
     
