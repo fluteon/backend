@@ -53,8 +53,7 @@ export default function AdminPannel() {
   const isLargeScreen = useMediaQuery(theme.breakpoints.up("lg"));
   const [sideBarVisible, setSideBarVisible] = React.useState(false);
   const navigate=useNavigate();
-  const dispatch=useDispatch()
-  const {auth}=useSelector(store=>store);
+  const dispatch=useDispatch();
 
   const handleLogout = async () => {
     try {

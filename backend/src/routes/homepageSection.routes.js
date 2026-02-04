@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const homepageSectionController = require('../controllers/homepageSection.controller.js');
-const authenticate = require('../middleware/authenticate.js');
+const authenticate = require('../middleware/authenticat.js');
 
 // Public route - get enabled sections for frontend
 router.get('/enabled', homepageSectionController.getEnabledSections);
