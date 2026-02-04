@@ -22,6 +22,10 @@ import {
   DialogActions,
   Alert,
   Snackbar,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import {
   DragIndicator as DragIcon,
@@ -33,6 +37,43 @@ import {
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import api from "../../../config/api";
 
+// Category hierarchy matching the product creation form
+const categoryHierarchy = {
+  women: {
+    bottom_wear: [
+      { value: "formal_pants", label: "Formal Pants" },
+      { value: "cotton_pants", label: "Cotton Pants" },
+      { value: "linen_pants", label: "Linen Pants" },
+      { value: "cargos", label: "Cargo" },
+      { value: "track_pants", label: "Track Pants" },
+      { value: "jeans", label: "Jeans" },
+      { value: "skirts", label: "Skirts" },
+      { value: "tummytucker", label: "Tummytucker" },
+      { value: "swimmingsuit", label: "Swimming Suit" },
+    ],
+    blazer: [
+      { value: "blazers", label: "Blazer" },
+      { value: "blazers_sets", label: "Blazer Sets" },
+    ],
+    shirts: [
+      { value: "formal_shirts", label: "Formal Shirts" },
+      { value: "satin_shirts", label: "Satin Shirts" },
+      { value: "hidden_button_shirts", label: "Hidden Button Shirts" },
+    ],
+    tops: [
+      { value: "tanic_tops", label: "Tanic Top" },
+      { value: "tunic_tops", label: "Tank Top" },
+      { value: "peplum_tops", label: "Peplum Top" },
+      { value: "crop_tops", label: "Crop Tops" },
+    ],
+    kurtis: [
+      { value: "office_wear_kurtis", label: "Office Wear" },
+      { value: "a_line_kurtis", label: "A-Line Kurtis" },
+      { value: "kalamkari", label: "Kalamkari Kurti" },
+    ],
+  },
+};
+
 const HomepageSections = () => {
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,9 +82,10 @@ const HomepageSections = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
   
   const [formData, setFormData] = useState({
-    name: "",
+    topLevelCategory: "",
+    secondLevelCategory: "",
+    thirdLevelCategory: "",
     label: "",
-    path: "",
     isEnabled: true,
     productsToShow: 10,
   });
@@ -114,19 +156,23 @@ const HomepageSections = () => {
   const handleOpenDialog = (section = null) => {
     if (section) {
       setEditingSection(section);
+      // Parse the path to extract categories
+      const pathParts = section.path.split('/').filter(Boolean);
       setFormData({
-        name: section.name,
+        topLevelCategory: pathParts[0] || "",
+        secondLevelCategory: pathParts[1] || "",
+        thirdLevelCategory: section.name,
         label: section.label,
-        path: section.path,
         isEnabled: section.isEnabled,
         productsToShow: section.productsToShow,
       });
     } else {
       setEditingSection(null);
       setFormData({
-        name: "",
+        topLevelCategory: "",
+        secondLevelCategory: "",
+        thirdLevelCategory: "",
         label: "",
-        path: "",
         isEnabled: true,
         productsToShow: 10,
       });
@@ -143,15 +189,26 @@ const HomepageSections = () => {
     try {
       const token = localStorage.getItem("jwt");
       
+      // Build the path from selected categories
+      const path = `/${formData.topLevelCategory}/${formData.secondLevelCategory}/${formData.thirdLevelCategory}`;
+      
+      const payload = {
+        name: formData.thirdLevelCategory,
+        label: formData.label,
+        path: path,
+        isEnabled: formData.isEnabled,
+        productsToShow: formData.productsToShow,
+      };
+      
       if (editingSection) {
         await api.put(
           `/api/homepage-sections/${editingSection._id}`,
-          formData,
+          payload,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         showSnackbar("Section updated successfully", "success");
       } else {
-        await api.post("/api/homepage-sections", formData, {
+        await api.post("/api/homepage-sections", payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
         showSnackbar("Section created successfully", "success");
@@ -350,13 +407,84 @@ const HomepageSections = () => {
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
-            <TextField
-              label="Category Name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              fullWidth
-              helperText="Internal name (e.g., blazers, satin_shirts)"
-            />
+            {/* Top Level Category */}
+            <FormControl fullWidth>
+              <InputLabel>Top Level Category</InputLabel>
+              <Select
+                value={formData.topLevelCategory}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    topLevelCategory: e.target.value,
+                    secondLevelCategory: "",
+                    thirdLevelCategory: "",
+                  })
+                }
+                label="Top Level Category"
+              >
+                {Object.keys(categoryHierarchy).map((topKey) => (
+                  <MenuItem key={topKey} value={topKey}>
+                    {topKey.charAt(0).toUpperCase() + topKey.slice(1)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Second Level Category */}
+            <FormControl fullWidth disabled={!formData.topLevelCategory}>
+              <InputLabel>Second Level Category</InputLabel>
+              <Select
+                value={formData.secondLevelCategory}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    secondLevelCategory: e.target.value,
+                    thirdLevelCategory: "",
+                  })
+                }
+                label="Second Level Category"
+              >
+                {formData.topLevelCategory &&
+                  Object.keys(categoryHierarchy[formData.topLevelCategory]).map(
+                    (secondKey) => (
+                      <MenuItem key={secondKey} value={secondKey}>
+                        {secondKey.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                      </MenuItem>
+                    )
+                  )}
+              </Select>
+            </FormControl>
+
+            {/* Third Level Category */}
+            <FormControl fullWidth disabled={!formData.secondLevelCategory}>
+              <InputLabel>Category</InputLabel>
+              <Select
+                value={formData.thirdLevelCategory}
+                onChange={(e) => {
+                  const selectedOption = categoryHierarchy[formData.topLevelCategory][
+                    formData.secondLevelCategory
+                  ].find((opt) => opt.value === e.target.value);
+                  
+                  setFormData({
+                    ...formData,
+                    thirdLevelCategory: e.target.value,
+                    label: selectedOption?.label || "",
+                  });
+                }}
+                label="Category"
+              >
+                {formData.topLevelCategory &&
+                  formData.secondLevelCategory &&
+                  categoryHierarchy[formData.topLevelCategory][
+                    formData.secondLevelCategory
+                  ].map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+              </Select>
+            </FormControl>
+
             <TextField
               label="Display Label"
               value={formData.label}
@@ -364,13 +492,7 @@ const HomepageSections = () => {
               fullWidth
               helperText="Label shown on website (e.g., Blazers, Satin Shirts)"
             />
-            <TextField
-              label="Category Path"
-              value={formData.path}
-              onChange={(e) => setFormData({ ...formData, path: e.target.value })}
-              fullWidth
-              helperText="URL path (e.g., /women/blazer/blazers)"
-            />
+            
             <TextField
               label="Products to Show"
               type="number"
