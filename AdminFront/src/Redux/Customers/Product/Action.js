@@ -115,7 +115,7 @@ export const createProduct = (product) => async (dispatch) => {
       product.data,
       {
         headers: {
-          "Content-Type": "multipart/form-data",
+          // Don't set Content-Type manually - let axios set it with boundary for FormData
           Authorization: `Bearer ${product.jwt}`,
         },
       }
