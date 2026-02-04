@@ -14,7 +14,13 @@ api.interceptors.request.use(
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
-    config.headers['Content-Type'] = 'application/json';
+    
+    // Only set Content-Type to JSON if it's not already set (for FormData)
+    // When data is FormData, browser/axios will auto-set multipart/form-data with boundary
+    if (!config.headers['Content-Type'] && !(config.data instanceof FormData)) {
+      config.headers['Content-Type'] = 'application/json';
+    }
+    
     return config;
   },
   (error) => {
