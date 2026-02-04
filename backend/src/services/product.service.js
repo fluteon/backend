@@ -13,8 +13,16 @@ async function createProduct(req) {
     if (typeof sizes === "string") sizes = JSON.parse(sizes);
     console.log("Parsed sizes:", sizes);
 
+    // Debug: Check what we received
+    console.log("req.files:", req.files);
+    console.log("req.files type:", typeof req.files);
+    console.log("req.files length:", req.files ? req.files.length : 'N/A');
+    console.log("req.file:", req.file);
+
     // Upload images to Cloudinary
-    if (!req.files || req.files.length === 0) throw new Error("No images uploaded");
+    if (!req.files || req.files.length === 0) {
+      throw new Error("No images uploaded. Please select at least one image.");
+    }
     console.log(`Uploading ${req.files.length} images to Cloudinary...`);
 
     const uploadResults = await Promise.all(

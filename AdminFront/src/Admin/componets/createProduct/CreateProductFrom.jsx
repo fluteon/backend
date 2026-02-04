@@ -685,6 +685,8 @@ useEffect(() => {
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files).slice(0, 4);
+    console.log("📸 Images selected:", files.length, "files");
+    console.log("File details:", files.map(f => ({ name: f.name, size: f.size, type: f.type })));
     setImages(files);
 
     const previews = files.map((file) => URL.createObjectURL(file));
@@ -754,6 +756,10 @@ const handleSubmit = async (e) => {
 
   const formData = new FormData();
 
+  console.log("📦 Building FormData...");
+  console.log("Images state:", images);
+  console.log("Images length:", images.length);
+
   for (let key in productData) {
     if (key === "size") {
       formData.append("size", JSON.stringify(productData.size));
@@ -762,9 +768,20 @@ const handleSubmit = async (e) => {
     }
   }
 
-  images.forEach((image) => {
+  if (images.length === 0) {
+    console.error("⚠️ No images in state! User must select images first.");
+    setError(true);
+    setErrorMessage("Please select at least one product image");
+    setLoading(false);
+    return;
+  }
+
+  images.forEach((image, index) => {
+    console.log(`Adding image ${index + 1}:`, image.name, image.size, "bytes");
     formData.append("images", image);
   });
+
+  console.log("✅ FormData ready with", images.length, "images");
 
   if (isEditing) {
     formData.append("productId", productData._id);
