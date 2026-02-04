@@ -760,14 +760,7 @@ const handleSubmit = async (e) => {
   console.log("Images state:", images);
   console.log("Images length:", images.length);
 
-  for (let key in productData) {
-    if (key === "size") {
-      formData.append("size", JSON.stringify(productData.size));
-    } else {
-      formData.append(key, productData[key]);
-    }
-  }
-
+  // Validate images first
   if (images.length === 0) {
     console.error("⚠️ No images in state! User must select images first.");
     setError(true);
@@ -776,6 +769,20 @@ const handleSubmit = async (e) => {
     return;
   }
 
+  // Add product data fields (skip 'images' field to avoid conflict)
+  for (let key in productData) {
+    if (key === "images") {
+      console.log("⏭️ Skipping productData.images field (will add File objects separately)");
+      continue; // Skip the images field - we'll add actual files below
+    }
+    if (key === "size") {
+      formData.append("size", JSON.stringify(productData.size));
+    } else {
+      formData.append(key, productData[key]);
+    }
+  }
+
+  // Add actual image File objects
   images.forEach((image, index) => {
     console.log(`Adding image ${index + 1}:`, image.name, image.size, "bytes");
     formData.append("images", image);
