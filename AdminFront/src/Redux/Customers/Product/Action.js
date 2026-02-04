@@ -126,9 +126,10 @@ export const createProduct = (product) => async (dispatch) => {
       payload: data,
     });
 
-    console.log("created product ", data);
+    console.log("✅ Product created successfully:", data);
+    return Promise.resolve(data); // ✅ Return success
   } catch (error) {
-    console.error("Create product error:", error.response?.data || error.message);
+    console.error("❌ Create product error:", error.response?.data || error.message);
     dispatch({
       type: CREATE_PRODUCT_FAILURE,
       payload:
@@ -136,6 +137,7 @@ export const createProduct = (product) => async (dispatch) => {
           ? error.response.data.message || error.response.data.error
           : error.message,
     });
+    return Promise.reject(error); // ✅ Return error
   }
 };
 

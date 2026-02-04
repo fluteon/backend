@@ -594,7 +594,10 @@ const productToUpdate = location.state?.product;
   const [sizeChart, setSizeChart] = useState(null);
   const [images, setImages] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
-const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const [productData, setProductData] = useState({
     images: "",
@@ -745,36 +748,44 @@ useEffect(() => {
 
 const handleSubmit = async (e) => {
   e.preventDefault();
+  setLoading(true);
+  setError(false);
+  setSuccess(false);
 
   const formData = new FormData();
 
-for (let key in productData) {
-  if (key === "size") {
-    formData.append("size", JSON.stringify(productData.size)); // ✅ Important
-  } else {
-    formData.append(key, productData[key]);
+  for (let key in productData) {
+    if (key === "size") {
+      formData.append("size", JSON.stringify(productData.size));
+    } else {
+      formData.append(key, productData[key]);
+    }
   }
-}
-
 
   images.forEach((image) => {
     formData.append("images", image);
   });
 
-if (isEditing) {
-  formData.append("productId", productData._id); // ✅ Ensure this is added
+  if (isEditing) {
+    formData.append("productId", productData._id);
 
-  dispatch(updateProduct(formData))
-        .then(() => {
-        setSuccess(true); // ✅ Show success snackbar
+    dispatch(updateProduct(formData))
+      .then(() => {
+        setSuccess(true);
+        setLoading(false);
+        console.log("✅ Product updated successfully");
       })
       .catch((err) => {
-        console.error("Update failed:", err);
+        console.error("❌ Update failed:", err);
+        setError(true);
+        setErrorMessage(err.response?.data?.error || err.message || "Failed to update product");
+        setLoading(false);
       });
-} else {
-  dispatch(createProduct({ data: formData, jwt }))
-        .then(() => {
-        // ✅ Clear form only after success
+  } else {
+    dispatch(createProduct({ data: formData, jwt }))
+      .then(() => {
+        console.log("✅ Product created successfully");
+        // Clear form only after success
         setProductData({
           images: "",
           brand: "",
@@ -793,13 +804,16 @@ if (isEditing) {
         setImages([]);
         setPreviewImages([]);
         setSizeChart(null);
-        setSuccess(true); // ✅ Show snackbar
+        setSuccess(true);
+        setLoading(false);
       })
-      .catch(() => {
-        // handle error if needed
+      .catch((err) => {
+        console.error("❌ Create failed:", err);
+        setError(true);
+        setErrorMessage(err.response?.data?.error || err.message || "Failed to create product. Please try again.");
+        setLoading(false);
       });
-}
-
+  }
 };
 
 
@@ -861,25 +875,41 @@ useEffect(() => {
 
   return (
     <Fragment className="createProductContainer">
-<Snackbar
-  open={success}
-  autoHideDuration={4000}
-  onClose={() => setSuccess(false)}
-  anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
->
-  <Alert onClose={() => setSuccess(false)} severity="success" sx={{ width: '100%' }}>
-    Product saved successfully!
-  </Alert>
-</Snackbar>
+      <Snackbar
+        open={success}
+        autoHideDuration={4000}
+        onClose={() => setSuccess(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSuccess(false)} severity="success" sx={{ width: '100%' }}>
+          {isEditing ? "Product updated successfully!" : "Product created successfully!"}
+        </Alert>
+      </Snackbar>
 
+      <Snackbar
+        open={error}
+        autoHideDuration={6000}
+        onClose={() => setError(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setError(false)} severity="error" sx={{ width: '100%' }}>
+          {errorMessage}
+        </Alert>
+      </Snackbar>
 
       <Typography
         variant="h3"
         sx={{ textAlign: "center" }}
         className="py-10 text-center"
       >
-        Add New Product
+        {isEditing ? "Edit Product" : "Add New Product"}
       </Typography>
+
+      {loading && (
+        <Alert severity="info" sx={{ mb: 2, mx: 3 }}>
+          {isEditing ? "Updating product..." : "Creating product..."}
+        </Alert>
+      )}
       <form
         onSubmit={handleSubmit}
         className="createProductContainer min-h-screen"
@@ -1139,15 +1169,19 @@ useEffect(() => {
           )}
 
           <Grid item xs={12}>
- <Button
-  variant="contained"
-  sx={{ p: 1.8 }}
-  className="py-20"
-  size="large"
-  type="submit"
->
-  {productToUpdate ? "Update Product" : "Add New Product"}
-</Button>
+            <Button
+              variant="contained"
+              sx={{ p: 1.8 }}
+              className="py-20"
+              size="large"
+              type="submit"
+              disabled={loading}
+            >
+              {loading 
+                ? (isEditing ? "Updating..." : "Creating...") 
+                : (isEditing ? "Update Product" : "Add New Product")
+              }
+            </Button>
           </Grid>
         </Grid>
       </form>

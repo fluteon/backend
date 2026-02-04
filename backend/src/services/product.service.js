@@ -4,14 +4,18 @@ const Product = require("../models/product.model");
 
 async function createProduct(req) {
   try {
+    console.log("🔍 Product Service: Starting product creation");
     const reqData = req.body;
+    console.log("Request data:", reqData);
 
     // Parse size string to JSON array
     let sizes = reqData.size;
     if (typeof sizes === "string") sizes = JSON.parse(sizes);
+    console.log("Parsed sizes:", sizes);
 
     // Upload images to Cloudinary
     if (!req.files || req.files.length === 0) throw new Error("No images uploaded");
+    console.log(`Uploading ${req.files.length} images to Cloudinary...`);
 
     const uploadResults = await Promise.all(
       req.files.map(file => {
@@ -23,11 +27,13 @@ async function createProduct(req) {
     );
 
     const imageUrls = uploadResults.map(result => result.secure_url);
-    console.log("Uploaded image URLs:", imageUrls);
+    console.log("✅ Images uploaded:", imageUrls.length);
 
     // Handle category creation
+    console.log("Finding/creating categories...");
     const topLevel = await Category.findOne({ name: reqData.topLavelCategory }) ||
       await new Category({ name: reqData.topLavelCategory, level: 1 }).save();
+    console.log("Top level category:", topLevel.name);
 
     const secondLevel = await Category.findOne({
       name: reqData.secondLavelCategory,
@@ -37,6 +43,7 @@ async function createProduct(req) {
       parentCategory: topLevel._id,
       level: 2,
     }).save();
+    console.log("Second level category:", secondLevel.name);
 
     const thirdLevel = await Category.findOne({
       name: reqData.thirdLavelCategory,
@@ -46,8 +53,10 @@ async function createProduct(req) {
       parentCategory: secondLevel._id,
       level: 3,
     }).save();
+    console.log("Third level category:", thirdLevel.name);
 
     // Create and save product
+    console.log("Creating product document...");
     const product = new Product({
       title: reqData.title,
       description: reqData.description,
@@ -62,10 +71,15 @@ async function createProduct(req) {
       category: thirdLevel._id,
     });
 
-    return await product.save();
+    console.log("Saving product to database...");
+    const savedProduct = await product.save();
+    console.log("✅ Product saved successfully! ID:", savedProduct._id);
+    
+    return savedProduct;
 
   } catch (error) {
-    console.error("Create Product Error:", error);
+    console.error("❌ Create Product Error:", error.message);
+    console.error("Full error:", error);
     throw new Error(error.message || "Something went wrong");
   }
 }

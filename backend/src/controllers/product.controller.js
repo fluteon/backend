@@ -4,9 +4,17 @@ const productService = require("../services/product.service.js")
 // Create a new product
 async function createProduct(req, res) {
   try {
-    const product = await productService.createProduct(req); // ✅ pass full req
+    console.log("📝 Creating product...");
+    console.log("Request body:", req.body);
+    console.log("Files:", req.files ? req.files.length : 0);
+    
+    const product = await productService.createProduct(req);
+    
+    console.log("✅ Product created successfully:", product._id);
     return res.status(201).json(product);
   } catch (err) {
+    console.error("❌ Product creation failed:", err.message);
+    console.error("Full error:", err);
     return res.status(500).json({ error: err.message });
   }
 }
