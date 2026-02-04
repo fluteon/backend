@@ -31,6 +31,7 @@ import { useEffect } from "react";
 import { deepPurple } from "@mui/material/colors";
 import Coupan from "./componets/Coupan/Coupan";
 import ReviewsTable from "./componets/Reviews/ReviewsTable";
+import HomepageSections from "./componets/Homepage/HomepageSections";
 import { auth } from "../firebase";
 
 const drawerWidth = 240;
@@ -41,6 +42,7 @@ const menu = [
   { name: "Customers", path: "/customers" },
   { name: "Orders", path: "/orders" },
   { name: "Reviews", path: "/reviews" },
+  { name: "Homepage Sections", path: "/homepage-sections" },
   { name: "Add Product", path: "/product/create" },
   { name: "Add Coupan Code", path: "/coupan"}
 ];
@@ -177,6 +179,7 @@ export default function AdminPannel() {
   <Route path="orders" element={<OrdersTable />} />
   <Route path="customers" element={<Customers />} />
   <Route path="reviews" element={<ReviewsTable />} />
+  <Route path="homepage-sections" element={<HomepageSections />} />
   <Route path="demo" element={<DemoAdmin />} />
   <Route path="coupan" element={<Coupan />} />
 </Routes>

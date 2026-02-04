@@ -129,6 +129,8 @@ app.use("/api/coupons", couponRoutes);
 const chatRoutes = require("../src/routes/chatRoute.js")
 app.use("/api",chatRoutes)
 
+const homepageSectionRoutes = require("./routes/homepageSection.routes.js");
+app.use("/api/homepage-sections", homepageSectionRoutes);
 
 // // admin dashboard
 // app.use("/api/admin/orders", adminOrderRoutes);
