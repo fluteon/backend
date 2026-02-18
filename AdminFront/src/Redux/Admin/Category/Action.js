@@ -21,7 +21,7 @@ import {
   DELETE_CATEGORY_SUCCESS,
   DELETE_CATEGORY_FAILURE,
 } from "./ActionType";
-import api, { API_BASE_URL } from "../../../config/api";
+import api from "../../../config/api";
 
 // Get all categories
 export const getAllCategories = () => async (dispatch) => {
