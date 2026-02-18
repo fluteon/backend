@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "name": "fluteon-admin",
+  "builds": [
+    {
+      "src": "AdminFront/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "AdminFront/build"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "AdminFront/build/$1"
+    }
+  ],
+  "buildCommand": "cd AdminFront && npm install && npm run build",
+  "outputDirectory": "AdminFront/build",
+  "framework": "react"
+}

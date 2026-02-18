@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: fluteon-backend-api
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.16.0
+    autoDeploy: true
