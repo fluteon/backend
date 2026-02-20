@@ -28,6 +28,11 @@ const AdminLogin = () => {
     setError('');
 
     try {
+      // Clear any existing tokens before login
+      console.log('🧹 Clearing storage before login');
+      sessionStorage.clear();
+      localStorage.clear();
+      
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
