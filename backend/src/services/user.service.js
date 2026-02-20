@@ -8,7 +8,6 @@ const Otp = require("../models/otpSchema.js")
 const transporter = require("../config/email.config.js");
 const sendEmailViaBrevo = require("../config/sendEmail.brevo.js");
 const axios = require("axios");
-const admin = require('../config/firebaseAdmin.js');
 require("dotenv").config();
 
 const createUser = async (userData)=>{
@@ -195,7 +194,7 @@ const verifyEmailService = async (email) => {
     throw new Error("User already exists with this email");
   }
 
-  const existingOtp = await Otp.findOne({ email, verificationType: 'email' });
+  const existingOtp = await Otp.findOne({ email });
   const now = new Date();
 
   // 1. Block sending if blockedUntil is in future
@@ -217,7 +216,7 @@ const verifyEmailService = async (email) => {
   const otpStr = otp.toString();
 
   await Otp.findOneAndUpdate(
-    { email, verificationType: 'email' },
+    { email },
     {
       otp: otpStr,
       createdAt: new Date(),
@@ -234,7 +233,7 @@ const verifyEmailService = async (email) => {
 
 
 const confirmOtpService = async (email, userOtp) => {
-  const otpEntry = await Otp.findOne({ email, verificationType: 'email' });
+  const otpEntry = await Otp.findOne({ email });
 
   if (!otpEntry) throw new Error("No OTP request found for this email");
 
@@ -242,7 +241,7 @@ const confirmOtpService = async (email, userOtp) => {
   const expiryTime = new Date(otpEntry.createdAt.getTime() + 10 * 60 * 1000); // 10 minute
 
   if (now > expiryTime) {
-    await Otp.deleteOne({ email, verificationType: 'email' });
+    await Otp.deleteOne({ email });
     throw new Error("OTP has expired. Please request a new one.");
   }
 
@@ -255,7 +254,7 @@ const confirmOtpService = async (email, userOtp) => {
     throw new Error("Invalid OTP. Please try again.");
   }
 
-  await Otp.deleteOne({ email, verificationType: 'email' });
+  await Otp.deleteOne({ email });
   return { success: true, message: "Email verified successfully", email };
 };
 
@@ -270,7 +269,7 @@ const sendResetOtpService = async (email) => {
   const otpStr = otp.toString();
 
   await Otp.findOneAndUpdate(
-    { email, verificationType: 'email' },
+    { email },
     { otp: otpStr, createdAt: new Date(), attempts: 0, blockedUntil: null },
     { upsert: true }
   );
@@ -291,180 +290,14 @@ const resetPasswordService = async (email, newPassword) => {
   return { success: true, message: "Password reset successfully" };
 };
 
-// ============================================
-// 📱 MOBILE OTP FUNCTIONS
-// ============================================
-
-// Get user by mobile number
-const getUserByMobile = async (mobile) => {
-  try {
-    const user = await User.findOne({ mobile });
-    return user;
-  } catch (error) {
-    console.log("error - ", error.message);
-    throw new Error(error.message);
-  }
-};
-
-// Send mobile OTP (validation only, Firebase sends actual SMS)
-const verifyMobileService = async (mobile) => {
-  // Check if user already exists with this mobile
-  const existingUser = await User.findOne({ mobile });
-  if (existingUser) {
-    throw new Error("User already exists with this mobile number");
-  }
-
-  const existingOtp = await Otp.findOne({ mobile, verificationType: 'mobile' });
-  const now = new Date();
-
-  // Block if too many attempts
-  if (existingOtp && existingOtp.blockedUntil && now < existingOtp.blockedUntil) {
-    const minutesLeft = Math.ceil((existingOtp.blockedUntil - now) / 1000 / 60);
-    throw new Error(`Too many attempts. Try again after ${minutesLeft} minutes.`);
-  }
-
-  // Rate limiting - max 3 attempts per minute
-  if (existingOtp && existingOtp.createdAt) {
-    const minutesSinceLast = (now - existingOtp.createdAt) / 1000 / 60;
-    if (existingOtp.attempts >= 3 && minutesSinceLast < 1) {
-      existingOtp.blockedUntil = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
-      await existingOtp.save();
-      throw new Error("Too many OTP requests. Try again after 1 hour.");
-    }
-  }
-
-  const otp = generateOtp();
-  const otpStr = otp.toString();
-
-  // Save OTP to database for verification
-  await Otp.findOneAndUpdate(
-    { mobile, verificationType: 'mobile' },
-    {
-      otp: otpStr,
-      createdAt: new Date(),
-      attempts: (existingOtp?.attempts || 0) + 1,
-      blockedUntil: null,
-    },
-    { upsert: true }
-  );
-
-  console.log(`📱 Mobile OTP prepared for ${mobile}: ${otpStr}`);
-  
-  // Note: Actual SMS is sent by Firebase on frontend
-  return { 
-    message: "OTP request validated. Firebase will send SMS.", 
-    mobile
-  };
-};
-
-// Verify mobile OTP
-const confirmMobileOtpService = async (mobile, userOtp, firebaseToken = null) => {
-  try {
-    // Optional: Verify Firebase token for extra security
-    if (firebaseToken && admin) {
-      try {
-        const decodedToken = await admin.auth().verifyIdToken(firebaseToken);
-        const firebasePhone = decodedToken.phone_number;
-        if (firebasePhone !== mobile) {
-          console.warn(`⚠️ Phone mismatch: Firebase=${firebasePhone}, Provided=${mobile}`);
-        }
-      } catch (error) {
-        console.warn("Firebase token verification skipped:", error.message);
-      }
-    }
-
-    const otpEntry = await Otp.findOne({ mobile, verificationType: 'mobile' });
-
-    if (!otpEntry) {
-      throw new Error("No OTP request found for this mobile number");
-    }
-
-    const now = new Date();
-    const expiryTime = new Date(otpEntry.createdAt.getTime() + 10 * 60 * 1000); // 10 minutes
-
-    if (now > expiryTime) {
-      await Otp.deleteOne({ mobile, verificationType: 'mobile' });
-      throw new Error("OTP has expired. Please request a new one.");
-    }
-
-    if (otpEntry.otp !== userOtp) {
-      otpEntry.attempts += 1;
-      if (otpEntry.attempts >= 3) {
-        otpEntry.blockedUntil = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
-      }
-      await otpEntry.save();
-      throw new Error("Invalid OTP. Please try again.");
-    }
-
-    // OTP is correct - delete it
-    await Otp.deleteOne({ mobile, verificationType: 'mobile' });
-
-    return { 
-      success: true,
-      message: "Mobile number verified successfully", 
-      verified: true,
-      mobile 
-    };
-  } catch (error) {
-    throw error;
-  }
-};
-
-// Send reset OTP to mobile (for password reset)
-const sendResetMobileOtpService = async (mobile) => {
-  const user = await User.findOne({ mobile });
-  if (!user) {
-    throw new Error("No user registered with this mobile number");
-  }
-
-  const existingOtp = await Otp.findOne({ mobile, verificationType: 'mobile' });
-  const now = new Date();
-
-  // Block if too many attempts
-  if (existingOtp && existingOtp.blockedUntil && now < existingOtp.blockedUntil) {
-    const minutesLeft = Math.ceil((existingOtp.blockedUntil - now) / 1000 / 60);
-    throw new Error(`Too many attempts. Try again after ${minutesLeft} minutes.`);
-  }
-
-  const otp = generateOtp();
-  const otpStr = otp.toString();
-
-  await Otp.findOneAndUpdate(
-    { mobile, verificationType: 'mobile' },
-    { otp: otpStr, createdAt: new Date(), attempts: 0, blockedUntil: null },
-    { upsert: true }
-  );
-
-  console.log(`📱 Password reset OTP for ${mobile}: ${otpStr}`);
-
-  return { message: "Reset OTP request validated. Firebase will send SMS.", mobile };
-};
-
-// Reset password using mobile
-const resetPasswordWithMobileService = async (mobile, newPassword) => {
-  const user = await User.findOne({ mobile });
-  if (!user) throw new Error("No user found with this mobile number");
-
-  const hashed = await bcrypt.hash(newPassword, 8);
-  user.password = hashed;
-  await user.save();
-
-  return { success: true, message: "Password reset successfully" };
-};
-
 module.exports={
     createUser,
     findUserById,
     getUserProfileByToken,
     getUserByEmail,
-    getUserByMobile,
     getAllUsers,
     verifyEmailService,
     confirmOtpService,
-    verifyMobileService,
-    confirmMobileOtpService,
     sendResetOtpService,
-    sendResetMobileOtpService,
-    resetPasswordService,
-    resetPasswordWithMobileService
+    resetPasswordService
 }

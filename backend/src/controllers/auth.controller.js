@@ -6,17 +6,10 @@ const { sanitizeError, errorMessages } = require("../utils/errorHandler.js");
 
 const register = async (req, res) => {
   try {
-    const { mobile, mobileVerified, emailVerified } = req.body;
+    const { emailVerified } = req.body;
     
-    // If mobile is provided, ensure it's verified
-    if (mobile && !mobileVerified) {
-      return res.status(400).send({ 
-        message: "Please verify your mobile number before registration" 
-      });
-    }
-    
-    // If email is provided without mobile, ensure email is verified
-    if (!mobile && !emailVerified) {
+    // Ensure email is verified before registration
+    if (!emailVerified) {
       return res.status(400).send({ 
         message: "Please verify your email before registration" 
       });
@@ -35,7 +28,7 @@ const register = async (req, res) => {
 };
 
 const login = async (req, res) => {
-  const { password, email, mobile, googleAuth } = req.body;
+  const { password, email, googleAuth } = req.body;
   
   try {
     let user;
@@ -71,14 +64,12 @@ const login = async (req, res) => {
       return res.status(200).send({ jwt, message: "Admin login success" });
     }
 
-    // Login with email or mobile
-    if (email) {
-      user = await userService.getUserByEmail(email);
-    } else if (mobile) {
-      user = await userService.getUserByMobile(mobile);
-    } else {
-      return res.status(400).json({ message: "Email or mobile number required" });
+    // Login with email
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
     }
+    
+    user = await userService.getUserByEmail(email);
 
     if (!user) {
       return res.status(401).json({ message: errorMessages.auth.login });
