@@ -19,7 +19,7 @@ import "../createProduct/CreateProductForm.css";
 import { useDispatch, useSelector } from "react-redux";
 import { findProductById } from "../../../Redux/Customers/Product/Action";
 import { updateProduct } from "../../../Redux/Admin/Product/Action";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../../config/api";
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert from '@mui/material/Alert';
@@ -74,6 +74,7 @@ const categoryHierarchy = {
 
 const UpdateProductForm = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { productId } = useParams();
   const { customersProduct } = useSelector((store) => store);
 
@@ -298,6 +299,11 @@ const UpdateProductForm = () => {
       setSuccess(true);
       setLoading(false);
       console.log("✅ Product updated successfully");
+      
+      // Redirect to products page after 1.5 seconds
+      setTimeout(() => {
+        navigate('/admin/products');
+      }, 1500);
     } catch (err) {
       console.error("❌ Update failed:", err);
       setError(true);

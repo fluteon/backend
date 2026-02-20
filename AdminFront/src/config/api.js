@@ -41,8 +41,9 @@ api.interceptors.response.use(
     if (error.response?.status === 401 || error.response?.data?.message?.includes('jwt expired')) {
       console.error('JWT token expired or invalid');
       
-      // Clear expired token
+      // Clear expired token from both storages
       localStorage.removeItem('jwt');
+      sessionStorage.removeItem('jwt');
       
       // Redirect to login page
       window.location.href = '/';
