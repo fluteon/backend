@@ -97,14 +97,6 @@ const HomepageSections = () => {
 
   const fetchSections = async () => {
     try {
-      const token = sessionStorage.getItem("jwt") || localStorage.getItem("jwt");
-      if (!token) {
-        console.error("❌ No JWT token found");
-        showSnackbar("Not authenticated. Please log in.", "error");
-        setLoading(false);
-        return;
-      }
-      
       console.log("📥 Fetching homepage sections from:", api.defaults.baseURL);
       const response = await api.get("/api/homepage-sections");
       console.log("✅ Fetched", response.data.length, "sections");
@@ -129,12 +121,6 @@ const HomepageSections = () => {
     setSections(items);
 
     try {
-      const token = sessionStorage.getItem("jwt") || localStorage.getItem("jwt");
-      if (!token) {
-        showSnackbar("Not authenticated. Please log in again.", "error");
-        return;
-      }
-      
       console.log("🔄 Updating order with", items.length, "sections");
       await api.put(
         "/api/homepage-sections/reorder",
