@@ -111,6 +111,14 @@ const UpdateProductForm = () => {
     }
   }, [productId, dispatch, customersProduct.updateProduct]);
 
+  // Monitor loading state changes for debugging
+  useEffect(() => {
+    console.log("🔎 Loading state changed to:", loading);
+    if (loading) {
+      console.trace("📍 Loading set to true from:");
+    }
+  }, [loading]);
+
   // Populate form when product loads
   useEffect(() => {
     if (customersProduct.product) {
@@ -207,15 +215,26 @@ const UpdateProductForm = () => {
   };
 
   const handleDragEnd = (result) => {
-    if (!result.destination) return;
+    console.log("🎯 handleDragEnd called", { result, loading });
+    
+    if (!result.destination) {
+      console.log("❌ No destination - drag cancelled");
+      return;
+    }
 
     const sourceIndex = result.source.index;
     const destinationIndex = result.destination.index;
 
-    if (sourceIndex === destinationIndex) return;
+    if (sourceIndex === destinationIndex) {
+      console.log("❌ Same position - no change");
+      return;
+    }
 
     // Prevent any form submission or loading state
-    if (loading) return;
+    if (loading) {
+      console.warn("⚠️ Drag attempted during loading state - blocking");
+      return;
+    }
 
     const reorderedImages = Array.from(images);
     const [movedImage] = reorderedImages.splice(sourceIndex, 1);
@@ -233,7 +252,7 @@ const UpdateProductForm = () => {
     setPreviewImages(reorderedPreviews);
     setImageIds(reorderedIds);
 
-    console.log("🔄 Images reordered:", sourceIndex, "→", destinationIndex);
+    console.log("✅ Images reordered:", sourceIndex, "→", destinationIndex);
   };
 
   const handleChange = (e) => {
@@ -284,6 +303,13 @@ const UpdateProductForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Prevent double submission
+    if (loading) {
+      console.log("⚠️ Form submission blocked - already loading");
+      return;
+    }
+    
     setLoading(true);
     setError(false);
     setSuccess(false);
@@ -448,6 +474,12 @@ const UpdateProductForm = () => {
       <form
         onSubmit={handleSubmit}
         className="createProductContainer min-h-screen"
+        onKeyDown={(e) => {
+          // Prevent Enter key from submitting form except on submit button
+          if (e.key === 'Enter' && e.target.type !== 'submit' && e.target.type !== 'textarea') {
+            e.preventDefault();
+          }
+        }}
       >
         <Grid container spacing={2}>
           <Grid item xs={12}>
@@ -465,7 +497,16 @@ const UpdateProductForm = () => {
               </Typography>
             </Box>
             
-            <DragDropContext onDragEnd={handleDragEnd}>
+            <DragDropContext
+              onDragEnd={handleDragEnd}
+              onDragStart={(result) => {
+                console.log("🎯 Drag started");
+                // Ensure we're not in loading state during drag
+                if (loading) {
+                  console.warn("⚠️ Drag operation during loading - this should not happen");
+                }
+              }}
+            >
               <Droppable droppableId="images" direction="horizontal">
                 {(provided) => (
                   <Box
@@ -494,11 +535,20 @@ const UpdateProductForm = () => {
                           key={imageIds[index] || `image-${index}`} 
                           draggableId={imageIds[index] || `image-${index}`} 
                           index={index}
+                          isDragDisabled={loading}
                         >
                           {(provided, snapshot) => (
                             <Box
                               ref={provided.innerRef}
                               {...provided.draggableProps}
+                              onMouseDown={(e) => {
+                                // Prevent any form interaction during drag
+                                e.stopPropagation();
+                              }}
+                              onClick={(e) => {
+                                // Prevent click from bubbling to form
+                                e.stopPropagation();
+                              }}
                               sx={{
                                 position: 'relative',
                                 border: snapshot.isDragging ? '2px solid #1976d2' : '2px solid #e0e0e0',
