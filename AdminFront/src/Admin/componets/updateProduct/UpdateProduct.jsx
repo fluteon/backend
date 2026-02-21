@@ -81,6 +81,7 @@ const UpdateProductForm = () => {
   const [sizeChart, setSizeChart] = useState(null);
   const [images, setImages] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
+  const [imageIds, setImageIds] = useState([]); // Stable IDs for drag-drop
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -102,12 +103,13 @@ const UpdateProductForm = () => {
     description: "",
   });
 
-  // Load product data when component mounts
+  // Load product data when component mounts or after update
   useEffect(() => {
     if (productId) {
+      console.log("🔄 Loading product data for ID:", productId);
       dispatch(findProductById({ productId }));
     }
-  }, [productId, dispatch]);
+  }, [productId, dispatch, customersProduct.updateProduct]);
 
   // Populate form when product loads
   useEffect(() => {
@@ -144,6 +146,8 @@ const UpdateProductForm = () => {
 
       if (product.imageUrl?.length > 0) {
         setPreviewImages(product.imageUrl);
+        // Generate stable IDs for existing images based on URL
+        setImageIds(product.imageUrl.map((url, idx) => `img-${url.substring(url.lastIndexOf('/') + 1)}-${idx}`));
       }
     }
   }, [customersProduct.product]);
@@ -180,14 +184,21 @@ const UpdateProductForm = () => {
     const newPreviews = files.map((file) => URL.createObjectURL(file));
     const allPreviews = [...previewImages, ...newPreviews].slice(0, 4);
     setPreviewImages(allPreviews);
+
+    // Generate stable IDs for new images
+    const newIds = files.map((file, idx) => `new-${file.name}-${Date.now()}-${idx}`);
+    const allIds = [...imageIds, ...newIds].slice(0, 4);
+    setImageIds(allIds);
   };
 
   const handleRemoveImage = (indexToRemove) => {
     const newImages = images.filter((_, index) => index !== indexToRemove);
     const newPreviews = previewImages.filter((_, index) => index !== indexToRemove);
+    const newIds = imageIds.filter((_, index) => index !== indexToRemove);
     
     setImages(newImages);
     setPreviewImages(newPreviews);
+    setImageIds(newIds);
     
     console.log("🗑️ Image removed. Remaining:", newImages.length);
   };
@@ -208,8 +219,13 @@ const UpdateProductForm = () => {
     const [movedPreview] = reorderedPreviews.splice(sourceIndex, 1);
     reorderedPreviews.splice(destinationIndex, 0, movedPreview);
 
+    const reorderedIds = Array.from(imageIds);
+    const [movedId] = reorderedIds.splice(sourceIndex, 1);
+    reorderedIds.splice(destinationIndex, 0, movedId);
+
     setImages(reorderedImages);
     setPreviewImages(reorderedPreviews);
+    setImageIds(reorderedIds);
 
     console.log("🔄 Images reordered:", sourceIndex, "→", destinationIndex);
   };
@@ -468,7 +484,11 @@ const UpdateProductForm = () => {
                       </Typography>
                     ) : (
                       previewImages.map((img, index) => (
-                        <Draggable key={`image-${index}`} draggableId={`image-${index}`} index={index}>
+                        <Draggable 
+                          key={imageIds[index] || `image-${index}`} 
+                          draggableId={imageIds[index] || `image-${index}`} 
+                          index={index}
+                        >
                           {(provided, snapshot) => (
                             <Box
                               ref={provided.innerRef}
