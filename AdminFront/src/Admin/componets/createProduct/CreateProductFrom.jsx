@@ -696,16 +696,16 @@ useEffect(() => {
   const jwt = sessionStorage.getItem("jwt");
 
   const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files).slice(0, 4);
+    const files = Array.from(e.target.files).slice(0, 10);
     console.log("📸 Images selected:", files.length, "files");
     console.log("File details:", files.map(f => ({ name: f.name, size: f.size, type: f.type })));
     
-    // Append new images to existing ones (up to 4 total)
-    const newImages = [...images, ...files].slice(0, 4);
+    // Append new images to existing ones (up to 10 total)
+    const newImages = [...images, ...files].slice(0, 10);
     setImages(newImages);
 
     const newPreviews = files.map((file) => URL.createObjectURL(file));
-    const allPreviews = [...previewImages, ...newPreviews].slice(0, 4);
+    const allPreviews = [...previewImages, ...newPreviews].slice(0, 10);
     setPreviewImages(allPreviews);
   };
 
@@ -812,11 +812,19 @@ const handleSubmit = async (e) => {
   console.log("Preview images:", previewImages.length);
   console.log("Is editing:", isEditing);
 
-  // Validate images: for new products, must have new images; for editing, must have either new images OR existing preview images
+  // Validate images: for new products, must have at least 4 images; for editing, must have either new images OR existing preview images
   if (!isEditing && images.length === 0) {
     console.error("⚠️ No images selected for new product!");
     setError(true);
-    setErrorMessage("Please select at least one product image");
+    setErrorMessage("Please select at least 4 product images");
+    setLoading(false);
+    return;
+  }
+  
+  if (!isEditing && images.length < 4) {
+    console.error("⚠️ Not enough images! Minimum 4 required, found:", images.length);
+    setError(true);
+    setErrorMessage(`Please add at least 4 product images. Currently: ${images.length} image(s)`);
     setLoading(false);
     return;
   }
@@ -824,7 +832,15 @@ const handleSubmit = async (e) => {
   if (isEditing && images.length === 0 && previewImages.length === 0) {
     console.error("⚠️ No images found for product update!");
     setError(true);
-    setErrorMessage("Please select at least one product image");
+    setErrorMessage("Please select at least 4 product images");
+    setLoading(false);
+    return;
+  }
+  
+  if (isEditing && images.length === 0 && previewImages.length < 4) {
+    console.error("⚠️ Not enough images! Minimum 4 required, found:", previewImages.length);
+    setError(true);
+    setErrorMessage(`Please add at least 4 product images. Currently: ${previewImages.length} image(s)`);
     setLoading(false);
     return;
   }
@@ -1015,7 +1031,7 @@ useEffect(() => {
                 style={{ marginBottom: '8px' }}
               />
               <Typography variant="caption" color="text.secondary" display="block">
-                Upload up to 4 images. Drag to reorder. First image will be the main product image.
+                Upload 4-10 images (minimum 4 required). Drag to reorder. First image will be the main product image.
               </Typography>
             </Box>
             

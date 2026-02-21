@@ -15,12 +15,12 @@ const handleUploadError = (err, req, res, next) => {
   next();
 };
 
-router.post('/', upload.array("images", 4), handleUploadError, productController.createProduct);
+router.post('/', upload.array("images", 10), handleUploadError, productController.createProduct);
 router.post('/creates', productController.createMultipleProduct);
 router.delete('/:id', productController.deleteProduct);
 router.put(
   '/:id',
-  upload.fields([{ name: "images", maxCount: 4 }]),
+  upload.fields([{ name: "images", maxCount: 10 }]),
   handleUploadError,
   productController.updateProduct
 );
