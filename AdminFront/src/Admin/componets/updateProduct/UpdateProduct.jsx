@@ -300,9 +300,9 @@ const UpdateProductForm = () => {
       setLoading(false);
       console.log("✅ Product updated successfully");
       
-      // Redirect to products page after 1.5 seconds
+      // Redirect to products page after 1.5 seconds with refresh trigger
       setTimeout(() => {
-        navigate('/admin/products');
+        navigate('/admin/products', { replace: true, state: { refreshProducts: true } });
       }, 1500);
     } catch (err) {
       console.error("❌ Update failed:", err);

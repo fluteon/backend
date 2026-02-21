@@ -72,7 +72,7 @@ const customerProductReducer = (state = initialState, action) => {
           ...state,
           loading: false,
           products: state.products.map((product) =>
-            product.id === action.payload.id ? action.payload : product
+            product._id === action.payload._id ? action.payload : product
           ),
         };
       case UPDATE_PRODUCT_FAILURE:

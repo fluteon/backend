@@ -129,8 +129,15 @@ const handlePaginationChange = (event, value) => {
       pageSize: 10,
       stock: availability,
     };
+    
+    console.log("🔄 Fetching products with filters:", data);
     dispatch(findProducts(data));
-  }, [availability, topLevelCategory, secondLevelCategory, thirdLevelCategory, sort, page, customersProduct.deleteProduct, dispatch]);
+    
+    // Clear navigation state after using it
+    if (location.state?.refreshProducts) {
+      window.history.replaceState({}, document.title);
+    }
+  }, [availability, topLevelCategory, secondLevelCategory, thirdLevelCategory, sort, page, customersProduct.deleteProduct, customersProduct.updateProduct, location.state, dispatch]);
 
 const handleFilterChange = (e, sectionId) => {
   const newValue = e.target.value;
