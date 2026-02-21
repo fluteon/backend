@@ -88,6 +88,7 @@ const HomepageSections = () => {
     label: "",
     isEnabled: true,
     productsToShow: 10,
+    colorPriority: "", // Comma-separated color names
   });
 
   useEffect(() => {
@@ -166,6 +167,7 @@ const HomepageSections = () => {
         label: section.label,
         isEnabled: section.isEnabled,
         productsToShow: section.productsToShow,
+        colorPriority: Array.isArray(section.colorPriority) ? section.colorPriority.join(", ") : "",
       });
     } else {
       setEditingSection(null);
@@ -176,6 +178,7 @@ const HomepageSections = () => {
         label: "",
         isEnabled: true,
         productsToShow: 10,
+        colorPriority: "",
       });
     }
     setOpenDialog(true);
@@ -191,12 +194,19 @@ const HomepageSections = () => {
       // Build the path from selected categories
       const path = `/${formData.topLevelCategory}/${formData.secondLevelCategory}/${formData.thirdLevelCategory}`;
       
+      // Parse color priority string into array
+      const colorPriorityArray = formData.colorPriority
+        .split(',')
+        .map(c => c.trim())
+        .filter(c => c.length > 0);
+      
       const payload = {
         name: formData.thirdLevelCategory,
         label: formData.label,
         path: path,
         isEnabled: formData.isEnabled,
         productsToShow: formData.productsToShow,
+        colorPriority: colorPriorityArray,
       };
       
       if (editingSection) {
@@ -496,6 +506,18 @@ const HomepageSections = () => {
               fullWidth
               inputProps={{ min: 1, max: 50 }}
             />
+            
+            <TextField
+              label="Color Priority (optional)"
+              value={formData.colorPriority}
+              onChange={(e) => setFormData({ ...formData, colorPriority: e.target.value })}
+              fullWidth
+              placeholder="e.g., Red, Blue, White"
+              helperText="Products with these colors will appear first. Enter comma-separated color names in priority order."
+              multiline
+              rows={2}
+            />
+            
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Switch
                 checked={formData.isEnabled}

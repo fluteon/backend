@@ -27,6 +27,11 @@ const homepageSectionSchema = new mongoose.Schema({
     type: Number,
     default: 10,
   },
+  colorPriority: {
+    type: [String],
+    default: [],
+    description: 'Array of colors in priority order. Products with these colors will appear first.'
+  },
 }, {
   timestamps: true,
 });

@@ -261,8 +261,20 @@ async function getAllProducts(reqQuery) {
     stock,
     pageNumber,
     pageSize,
+    colorPriority, // Array of colors to prioritize
   } = reqQuery;
   (pageSize = pageSize || 10), (pageNumber = pageNumber || 1);
+  
+  // Parse colorPriority if it's a JSON string
+  if (colorPriority && typeof colorPriority === 'string') {
+    try {
+      colorPriority = JSON.parse(colorPriority);
+    } catch (e) {
+      console.error('Failed to parse colorPriority:', e);
+      colorPriority = undefined;
+    }
+  }
+  
   let query = Product.find().populate("category");
 
 
@@ -342,6 +354,28 @@ if (category) {
   query = query.skip(skip).limit(pageSize);
 
   const products = await query.exec();
+
+  // Apply color priority sorting if specified
+  if (colorPriority && Array.isArray(colorPriority) && colorPriority.length > 0) {
+    console.log("🎨 Applying color priority:", colorPriority);
+    
+    // Create a map of color to priority index (lower index = higher priority)
+    const colorPriorityMap = new Map();
+    colorPriority.forEach((color, index) => {
+      colorPriorityMap.set(color.toLowerCase().trim(), index);
+    });
+    
+    // Sort products by color priority
+    products.sort((a, b) => {
+      const colorA = (a.color || '').toLowerCase().trim();
+      const colorB = (b.color || '').toLowerCase().trim();
+      
+      const priorityA = colorPriorityMap.has(colorA) ? colorPriorityMap.get(colorA) : 9999;
+      const priorityB = colorPriorityMap.has(colorB) ? colorPriorityMap.get(colorB) : 9999;
+      
+      return priorityA - priorityB;
+    });
+  }
 
   const totalPages = Math.ceil(totalProducts / pageSize);
 
