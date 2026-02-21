@@ -114,7 +114,19 @@ const UpdateProductForm = () => {
     if (customersProduct.product) {
       const product = customersProduct.product;
       
-      const categoryPath = findCategoryPath(product.thirdLavelCategory || "formal_pants");
+      // Extract category from product.category object (populated)
+      let categoryPath = {
+        topLavelCategory: "",
+        secondLavelCategory: "",
+        thirdLavelCategory: "",
+      };
+      
+      // If product has category, try to find it in hierarchy
+      if (product.category?.name) {
+        categoryPath = findCategoryPath(product.category.name) || categoryPath;
+        console.log("📍 Product category:", product.category.name);
+        console.log("📍 Resolved category path:", categoryPath);
+      }
       
       setProductData({
         _id: product._id,
@@ -257,14 +269,29 @@ const UpdateProductForm = () => {
     const formData = new FormData();
 
     console.log("📦 Building FormData for UPDATE...");
+    console.log("Product Data:", productData);
     console.log("Images state:", images.length);
     console.log("Preview images:", previewImages.length);
+    console.log("📂 Categories:", {
+      top: productData.topLavelCategory,
+      second: productData.secondLavelCategory,
+      third: productData.thirdLavelCategory
+    });
 
     // Validate images: Must have either new images OR existing preview images
     if (images.length === 0 && previewImages.length === 0) {
       console.error("⚠️ No images found for product update!");
       setError(true);
       setErrorMessage("Please select at least one product image");
+      setLoading(false);
+      return;
+    }
+
+    // Validate categories
+    if (!productData.topLavelCategory || !productData.secondLavelCategory || !productData.thirdLavelCategory) {
+      console.error("⚠️ Categories not properly set!");
+      setError(true);
+      setErrorMessage("Product category is missing. Please select all category levels.");
       setLoading(false);
       return;
     }

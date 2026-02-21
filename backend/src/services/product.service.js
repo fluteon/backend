@@ -110,6 +110,13 @@ async function updateProduct(productId, reqData, files = []) {
     const product = await Product.findById(productId);
     if (!product) throw new Error("Product not found");
 
+    console.log("📝 Updating product:", productId);
+    console.log("📂 Received categories:", {
+      top: reqData.topLavelCategory,
+      second: reqData.secondLavelCategory,
+      third: reqData.thirdLavelCategory
+    });
+
     // ✅ Fix: Ensure size is properly extracted and parsed
     let sizes = [];
     console.log("Received size in reqData:", reqData.size);
@@ -162,8 +169,11 @@ async function updateProduct(productId, reqData, files = []) {
     // Otherwise keep the existing product images (no change)
 
     // ✅ Category handling
-    let categoryId = product.category;
+    let categoryId = product.category; // Keep original category by default
+    
     if (reqData.topLavelCategory && reqData.secondLavelCategory && reqData.thirdLavelCategory) {
+      console.log("🔄 Updating category hierarchy...");
+      
       const top = await Category.findOne({ name: reqData.topLavelCategory }) ||
         await new Category({ name: reqData.topLavelCategory, level: 1 }).save();
 
@@ -186,6 +196,9 @@ async function updateProduct(productId, reqData, files = []) {
       }).save();
 
       categoryId = bottom._id;
+      console.log("✅ Category updated to:", reqData.thirdLavelCategory);
+    } else {
+      console.log("⚠️ Category data incomplete, keeping original category");
     }
 
     // ✅ Update product fields
