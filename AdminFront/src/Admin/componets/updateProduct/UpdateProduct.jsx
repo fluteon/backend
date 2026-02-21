@@ -192,6 +192,9 @@ const UpdateProductForm = () => {
   };
 
   const handleRemoveImage = (indexToRemove) => {
+    // Don't allow removing images during form submission
+    if (loading) return;
+    
     const newImages = images.filter((_, index) => index !== indexToRemove);
     const newPreviews = previewImages.filter((_, index) => index !== indexToRemove);
     const newIds = imageIds.filter((_, index) => index !== indexToRemove);
@@ -210,6 +213,9 @@ const UpdateProductForm = () => {
     const destinationIndex = result.destination.index;
 
     if (sourceIndex === destinationIndex) return;
+
+    // Prevent any form submission or loading state
+    if (loading) return;
 
     const reorderedImages = Array.from(images);
     const [movedImage] = reorderedImages.splice(sourceIndex, 1);
@@ -528,7 +534,12 @@ const UpdateProductForm = () => {
 
                               <IconButton
                                 size="small"
-                                onClick={() => handleRemoveImage(index)}
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleRemoveImage(index);
+                                }}
                                 sx={{
                                   position: 'absolute',
                                   top: 0,
@@ -768,6 +779,7 @@ const UpdateProductForm = () => {
               {!sizeChart && (
                 <Grid item xs={12}>
                   <Button
+                    type="button"
                     variant="outlined"
                     onClick={handleAddSize}
                     sx={{ mt: 1 }}
