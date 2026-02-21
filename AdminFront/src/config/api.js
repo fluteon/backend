@@ -40,10 +40,10 @@ api.interceptors.response.use(
     // Handle JWT expiration - catch both 401 and 500 (old backend returns 500)
     const isJWTExpired = 
       error.response?.status === 401 || 
-      error.response?.status === 500 &&
-      (error.response?.data?.message?.includes('jwt expired') || 
-       error.response?.data?.error?.includes('jwt expired') ||
-       error.message?.includes('jwt expired'));
+      (error.response?.status === 500 &&
+        (error.response?.data?.message?.includes('jwt expired') || 
+         error.response?.data?.error?.includes('jwt expired') ||
+         error.message?.includes('jwt expired')));
     
     if (isJWTExpired) {
       console.error('⚠️ JWT token expired or invalid - clearing storage and redirecting');
