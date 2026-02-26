@@ -6,16 +6,20 @@ const { sanitizeError, errorMessages } = require("../utils/errorHandler.js");
 
 const register = async (req, res) => {
   try {
-    const { emailVerified } = req.body;
-    
-    // Ensure email is verified before registration
-    if (!emailVerified) {
-      return res.status(400).send({ 
-        message: "Please verify your email before registration" 
+    const { emailVerified, mobileVerified, mobile } = req.body;
+
+    // At least ONE of email or mobile must be verified
+    if (!emailVerified && !mobileVerified) {
+      return res.status(400).send({
+        message: "Please verify your email or mobile number before registration"
       });
     }
-    
-    const user = await userService.createUser(req.body);
+
+    // Build userData – include mobile only when verified via WhatsApp OTP
+    const userData = { ...req.body };
+    if (!mobileVerified) delete userData.mobile; // don't save mobile if not verified
+
+    const user = await userService.createUser(userData);
     const jwt = jwtProvider.generateToken(user._id);
 
     await cartService.createCart(user);
@@ -29,21 +33,21 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   const { password, email, googleAuth } = req.body;
-  
+
   try {
     let user;
-    
+
     // Handle Google Authentication for Admin
     if (googleAuth) {
       const ALLOWED_ADMIN_EMAIL = 'fluteoncompany@gmail.com';
       if (email !== ALLOWED_ADMIN_EMAIL) {
-        return res.status(403).json({ 
-          message: `Access Denied: Only ${ALLOWED_ADMIN_EMAIL} is authorized for admin access` 
+        return res.status(403).json({
+          message: `Access Denied: Only ${ALLOWED_ADMIN_EMAIL} is authorized for admin access`
         });
       }
 
       user = await userService.getUserByEmail(email);
-      
+
       if (!user) {
         const { firstName, lastName } = req.body;
         user = await userService.createUser({
@@ -68,7 +72,7 @@ const login = async (req, res) => {
     if (!email) {
       return res.status(400).json({ message: "Email is required" });
     }
-    
+
     user = await userService.getUserByEmail(email);
 
     if (!user) {

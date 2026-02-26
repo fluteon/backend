@@ -123,21 +123,21 @@ const UpdateProductForm = () => {
   useEffect(() => {
     if (customersProduct.product) {
       const product = customersProduct.product;
-      
+
       // Extract category from product.category object (populated)
       let categoryPath = {
         topLavelCategory: "",
         secondLavelCategory: "",
         thirdLavelCategory: "",
       };
-      
+
       // If product has category, try to find it in hierarchy
       if (product.category?.name) {
         categoryPath = findCategoryPath(product.category.name) || categoryPath;
         console.log("📍 Product category:", product.category.name);
         console.log("📍 Resolved category path:", categoryPath);
       }
-      
+
       setProductData({
         _id: product._id,
         brand: product.brand || "",
@@ -185,7 +185,7 @@ const UpdateProductForm = () => {
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files).slice(0, 10);
     console.log("📸 Images selected:", files.length, "files");
-    
+
     const newImages = [...images, ...files].slice(0, 10);
     setImages(newImages);
 
@@ -202,57 +202,46 @@ const UpdateProductForm = () => {
   const handleRemoveImage = (indexToRemove) => {
     // Don't allow removing images during form submission
     if (loading) return;
-    
+
     const newImages = images.filter((_, index) => index !== indexToRemove);
     const newPreviews = previewImages.filter((_, index) => index !== indexToRemove);
     const newIds = imageIds.filter((_, index) => index !== indexToRemove);
-    
+
     setImages(newImages);
     setPreviewImages(newPreviews);
     setImageIds(newIds);
-    
+
     console.log("🗑️ Image removed. Remaining:", newImages.length);
   };
 
   const handleDragEnd = (result) => {
-    console.log("🎯 handleDragEnd called", { result, loading });
-    
-    if (!result.destination) {
-      console.log("❌ No destination - drag cancelled");
-      return;
-    }
+    if (!result.destination || loading) return;
 
     const sourceIndex = result.source.index;
     const destinationIndex = result.destination.index;
 
-    if (sourceIndex === destinationIndex) {
-      console.log("❌ Same position - no change");
-      return;
-    }
+    if (sourceIndex === destinationIndex) return;
 
-    // Prevent any form submission or loading state
-    if (loading) {
-      console.warn("⚠️ Drag attempted during loading state - blocking");
-      return;
-    }
-
-    const reorderedImages = Array.from(images);
-    const [movedImage] = reorderedImages.splice(sourceIndex, 1);
-    reorderedImages.splice(destinationIndex, 0, movedImage);
-
+    // Always reorder the preview URLs (these represent all visible images)
     const reorderedPreviews = Array.from(previewImages);
     const [movedPreview] = reorderedPreviews.splice(sourceIndex, 1);
     reorderedPreviews.splice(destinationIndex, 0, movedPreview);
+    setPreviewImages(reorderedPreviews);
 
+    // Always reorder the stable drag-drop IDs
     const reorderedIds = Array.from(imageIds);
     const [movedId] = reorderedIds.splice(sourceIndex, 1);
     reorderedIds.splice(destinationIndex, 0, movedId);
-
-    setImages(reorderedImages);
-    setPreviewImages(reorderedPreviews);
     setImageIds(reorderedIds);
 
-    console.log("✅ Images reordered:", sourceIndex, "→", destinationIndex);
+    // Only reorder File objects if there are any (new uploads)
+    // When editing with existing images only, `images` is [] and must stay []
+    if (images.length > 0) {
+      const reorderedFiles = Array.from(images);
+      const [movedFile] = reorderedFiles.splice(sourceIndex, 1);
+      reorderedFiles.splice(destinationIndex, 0, movedFile);
+      setImages(reorderedFiles);
+    }
   };
 
   const handleChange = (e) => {
@@ -303,41 +292,25 @@ const UpdateProductForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Prevent double submission
-    if (loading) {
-      console.log("⚠️ Form submission blocked - already loading");
-      return;
-    }
-    
+    if (loading) return;
+
     setLoading(true);
     setError(false);
     setSuccess(false);
 
     const formData = new FormData();
 
-    console.log("📦 Building FormData for UPDATE...");
-    console.log("Product Data:", productData);
-    console.log("Images state:", images.length);
-    console.log("Preview images:", previewImages.length);
-    console.log("📂 Categories:", {
-      top: productData.topLavelCategory,
-      second: productData.secondLavelCategory,
-      third: productData.thirdLavelCategory
-    });
-
-    // Validate images: Must have at least 4 images (either new images OR existing preview images)
+    // Validate: need at least 4 images
     const totalImages = images.length > 0 ? images.length : previewImages.length;
     if (totalImages === 0) {
-      console.error("⚠️ No images found for product update!");
       setError(true);
       setErrorMessage("Please select at least 4 product images");
       setLoading(false);
       return;
     }
-    
     if (totalImages < 4) {
-      console.error("⚠️ Not enough images! Minimum 4 required, found:", totalImages);
       setError(true);
       setErrorMessage(`Please add at least 4 product images. Currently: ${totalImages} image(s)`);
       setLoading(false);
@@ -346,7 +319,6 @@ const UpdateProductForm = () => {
 
     // Validate categories
     if (!productData.topLavelCategory || !productData.secondLavelCategory || !productData.thirdLavelCategory) {
-      console.error("⚠️ Categories not properly set!");
       setError(true);
       setErrorMessage("Product category is missing. Please select all category levels.");
       setLoading(false);
@@ -355,9 +327,7 @@ const UpdateProductForm = () => {
 
     // Add product data fields
     for (let key in productData) {
-      if (key === "images" || key === "_id") {
-        continue;
-      }
+      if (key === "images" || key === "_id") continue;
       if (key === "size") {
         formData.append("size", JSON.stringify(productData.size));
       } else {
@@ -365,14 +335,13 @@ const UpdateProductForm = () => {
       }
     }
 
-    // Add images
+    // Handle images:
+    // Case A: New files were uploaded (images[] contains File objects) → upload to Cloudinary
+    // Case B: No new files (drag-reorder only) → send the reordered existing URLs
     if (images.length > 0) {
-      images.forEach((image, index) => {
-        console.log(`Adding new image ${index + 1}`);
-        formData.append("images", image);
-      });
+      images.forEach((image) => formData.append("images", image));
     } else {
-      console.log("✅ No new images - keeping existing images:", previewImages.length);
+      // This covers both: no changes AND drag-reorder of existing images
       formData.append("existingImages", JSON.stringify(previewImages));
     }
 
@@ -381,17 +350,13 @@ const UpdateProductForm = () => {
     try {
       await dispatch(updateProduct(formData));
       setSuccess(true);
-      setLoading(false);
-      console.log("✅ Product updated successfully");
-      
-      // Redirect to products page after 1.5 seconds with refresh trigger
       setTimeout(() => {
         navigate('/admin/products', { replace: true, state: { refreshProducts: true } });
       }, 1500);
     } catch (err) {
-      console.error("❌ Update failed:", err);
       setError(true);
       setErrorMessage(err.response?.data?.error || err.message || "Failed to update product");
+    } finally {
       setLoading(false);
     }
   };
@@ -439,8 +404,8 @@ const UpdateProductForm = () => {
   const thirdLevelOptions = productData.topLavelCategory &&
     productData.secondLavelCategory &&
     categoryHierarchy[productData.topLavelCategory][productData.secondLavelCategory]
-      ? categoryHierarchy[productData.topLavelCategory][productData.secondLavelCategory]
-      : [];
+    ? categoryHierarchy[productData.topLavelCategory][productData.secondLavelCategory]
+    : [];
 
   return (
     <Fragment className="createProductContainer">
@@ -505,7 +470,7 @@ const UpdateProductForm = () => {
                 Upload 4-10 images (minimum 4 required). Drag to reorder. First image will be the main product image.
               </Typography>
             </Box>
-            
+
             <DragDropContext
               onDragEnd={handleDragEnd}
               onDragStart={(result) => {
@@ -521,10 +486,10 @@ const UpdateProductForm = () => {
                   <Box
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    sx={{ 
-                      display: "flex", 
-                      gap: 2, 
-                      mt: 2, 
+                    sx={{
+                      display: "flex",
+                      gap: 2,
+                      mt: 2,
                       flexWrap: "wrap",
                       minHeight: previewImages.length === 0 ? '120px' : 'auto',
                       border: previewImages.length === 0 ? '2px dashed #ccc' : 'none',
@@ -540,9 +505,9 @@ const UpdateProductForm = () => {
                       </Typography>
                     ) : (
                       previewImages.map((img, index) => (
-                        <Draggable 
-                          key={imageIds[index] || `image-${index}`} 
-                          draggableId={imageIds[index] || `image-${index}`} 
+                        <Draggable
+                          key={imageIds[index] || `image-${index}`}
+                          draggableId={imageIds[index] || `image-${index}`}
                           index={index}
                           isDragDisabled={loading}
                         >
@@ -640,8 +605,8 @@ const UpdateProductForm = () => {
                                 alt={`preview ${index + 1}`}
                                 width="120"
                                 height="120"
-                                style={{ 
-                                  objectFit: "cover", 
+                                style={{
+                                  objectFit: "cover",
                                   display: 'block',
                                   opacity: snapshot.isDragging ? 0.8 : 1
                                 }}

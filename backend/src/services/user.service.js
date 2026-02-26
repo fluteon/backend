@@ -1,87 +1,89 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const User = require('../models/user.model.js');
-const jwtProvider=require("../config/jwtProvider")
+const jwtProvider = require("../config/jwtProvider")
 const nodemailer = require("nodemailer");
 const crypto = require("crypto")
 const Otp = require("../models/otpSchema.js")
+const WhatsappOtp = require("../models/whatsappOtp.model.js");
 const transporter = require("../config/email.config.js");
 const sendEmailViaBrevo = require("../config/sendEmail.brevo.js");
+const { sendWhatsAppOtp } = require("./whatsapp.service.js");
 const axios = require("axios");
 require("dotenv").config();
 
-const createUser = async (userData)=>{
-    try {
+const createUser = async (userData) => {
+  try {
 
-        let {firstName,lastName,email,password,role}=userData;
+    let { firstName, lastName, email, password, role } = userData;
 
-        const isUserExist=await User.findOne({email});
+    const isUserExist = await User.findOne({ email });
 
 
-        if(isUserExist){
-            throw new Error("user already exist with email : ",email)
-        }
-
-        password=await bcrypt.hash(password,8);
-    
-        const user=await User.create({firstName,lastName,email,password,role})
-
-        console.log("user ",user)
-    
-        return user;
-        
-    } catch (error) {
-        console.log("error - ",error.message)
-        throw new Error(error.message)
+    if (isUserExist) {
+      throw new Error("user already exist with email : ", email)
     }
+
+    password = await bcrypt.hash(password, 8);
+
+    const user = await User.create({ firstName, lastName, email, password, role })
+
+    console.log("user ", user)
+
+    return user;
+
+  } catch (error) {
+    console.log("error - ", error.message)
+    throw new Error(error.message)
+  }
 
 }
 
-const findUserById=async(userId)=>{
-    try {
-        const user = await User.findById(userId);
-        if(!user){
-            throw new Error("user not found with id : ",userId)
-        }
-        return user;
-    } catch (error) {
-        console.log("error :------- ",error.message)
-        throw new Error(error.message)
+const findUserById = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new Error("user not found with id : ", userId)
     }
+    return user;
+  } catch (error) {
+    console.log("error :------- ", error.message)
+    throw new Error(error.message)
+  }
 }
 
-const getUserByEmail=async(email)=>{
-    try {
-        const user=await User.findOne({email});
-        
-        // Return null if user not found (let caller handle it)
-        return user;
-        
-    } catch (error) {
-        console.log("error - ",error.message)
-        throw new Error(error.message)
-    }
+const getUserByEmail = async (email) => {
+  try {
+    const user = await User.findOne({ email });
+
+    // Return null if user not found (let caller handle it)
+    return user;
+
+  } catch (error) {
+    console.log("error - ", error.message)
+    throw new Error(error.message)
+  }
 }
 
-const getUserProfileByToken=async(token)=>{
-    try {
+const getUserProfileByToken = async (token) => {
+  try {
 
-        const userId=jwtProvider.getUserIdFromToken(token)
+    const userId = jwtProvider.getUserIdFromToken(token)
 
-        console.log("userr id ",userId)
+    console.log("userr id ", userId)
 
 
-        const user= (await findUserById(userId)).populate("addresses");
-        user.password=null;
-        
-        if(!user){
-            throw new Error("user not exist with id : ",userId)
-        }
-        return user;
-    } catch (error) {
-        console.log("error ----- ",error.message)
-        throw new Error(error.message)
+    const user = (await findUserById(userId)).populate("addresses");
+    user.password = null;
+
+    if (!user) {
+      throw new Error("user not exist with id : ", userId)
     }
+    return user;
+  } catch (error) {
+    console.log("error ----- ", error.message)
+    throw new Error(error.message)
+  }
 }
 
 // const getAllUsers=async()=>{
@@ -104,7 +106,7 @@ const getAllUsers = async ({ pageNumber = 1, pageSize = 10 }) => {
     .sort({ createdAt: -1 }) // Sort by newest first
     .skip((pageNumber - 1) * pageSize)
     .limit(pageSize)
-    .select('firstName lastName email createdAt'); // Select only needed fields
+    .select('firstName lastName email mobile createdAt'); // Select only needed fields
 
   const totalPages = Math.ceil(totalUsers / pageSize);
 
@@ -154,24 +156,24 @@ const sendEmail = async (email, otp) => {
     console.log("✅ OTP email sent to", email);
 
     // ✅ 2. Also send a test email (optional)
-await axios.post(
-  "https://api.brevo.com/v3/smtp/email",
-  {
-    sender: {
-      name: "Fluteon",
-      email: process.env.FROM_EMAIL,
-    },
-    to: [{ email }], // ✅ now dynamic
-    subject: "Test Email",
-    htmlContent: "<h1>This is a test email from Fluteon 🚀</h1>",
-  },
-  {
-    headers: {
-      "api-key": process.env.BREVO_API_KEY,
-      "Content-Type": "application/json",
-    },
-  }
-);
+    await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      {
+        sender: {
+          name: "Fluteon",
+          email: process.env.FROM_EMAIL,
+        },
+        to: [{ email }], // ✅ now dynamic
+        subject: "Test Email",
+        htmlContent: "<h1>This is a test email from Fluteon 🚀</h1>",
+      },
+      {
+        headers: {
+          "api-key": process.env.BREVO_API_KEY,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
 
     console.log("✅ Test email sent to your@email.com");
@@ -226,7 +228,7 @@ const verifyEmailService = async (email) => {
     { upsert: true }
   );
 
-   await sendEmailViaBrevo(email, otpStr);
+  await sendEmailViaBrevo(email, otpStr);
 
   return { message: "OTP sent successfully", email };
 };
@@ -290,14 +292,97 @@ const resetPasswordService = async (email, newPassword) => {
   return { success: true, message: "Password reset successfully" };
 };
 
-module.exports={
-    createUser,
-    findUserById,
-    getUserProfileByToken,
-    getUserByEmail,
-    getAllUsers,
-    verifyEmailService,
-    confirmOtpService,
-    sendResetOtpService,
-    resetPasswordService
+// ─────────────────────────────────────────────────────────────────────────────
+// WhatsApp OTP Services (MSG91)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Send a 6-digit OTP via MSG91 WhatsApp to the given mobile number.
+ * Rate-limits: max 3 requests per minute; blocks for 1 hour on abuse.
+ */
+const sendWhatsAppOtpService = async (mobile) => {
+  // Basic Indian mobile validation (10 digits, starts 6-9)
+  if (!/^[6-9]\d{9}$/.test(mobile)) {
+    throw new Error("Please enter a valid 10-digit Indian mobile number.");
+  }
+
+  const existingOtp = await WhatsappOtp.findOne({ mobile });
+  const now = new Date();
+
+  // Block if within blocked period
+  if (existingOtp && existingOtp.blockedUntil && now < existingOtp.blockedUntil) {
+    throw new Error("Too many attempts. Try again after 1 hour.");
+  }
+
+  // Restrict max 3 attempts in a short window (1 minute)
+  if (existingOtp && existingOtp.createdAt) {
+    const secondsSinceLast = (now - existingOtp.createdAt) / 1000;
+    if (existingOtp.attempts >= 3 && secondsSinceLast < 60) {
+      existingOtp.blockedUntil = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
+      await existingOtp.save();
+      throw new Error("Too many OTP requests. Try again after 1 hour.");
+    }
+  }
+
+  // Generate 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+  await WhatsappOtp.findOneAndUpdate(
+    { mobile },
+    {
+      otp,
+      createdAt: new Date(),
+      attempts: (existingOtp?.attempts || 0) + 1,
+      blockedUntil: null,
+    },
+    { upsert: true, new: true }
+  );
+
+  await sendWhatsAppOtp(mobile, otp);
+
+  return { message: "OTP sent via WhatsApp successfully", mobile };
+};
+
+/**
+ * Verify a WhatsApp OTP entered by the user.
+ * Checks TTL (10 min), attempt limits, and deletes the OTP on success.
+ */
+const verifyWhatsAppOtpService = async (mobile, userOtp) => {
+  const otpEntry = await WhatsappOtp.findOne({ mobile });
+
+  if (!otpEntry) throw new Error("No OTP request found for this mobile number.");
+
+  const now = new Date();
+  const expiryTime = new Date(otpEntry.createdAt.getTime() + 10 * 60 * 1000);
+
+  if (now > expiryTime) {
+    await WhatsappOtp.deleteOne({ mobile });
+    throw new Error("OTP has expired. Please request a new one.");
+  }
+
+  if (otpEntry.otp !== userOtp.toString()) {
+    otpEntry.attempts += 1;
+    if (otpEntry.attempts >= 5) {
+      otpEntry.blockedUntil = new Date(Date.now() + 60 * 60 * 1000); // block 1 hour
+    }
+    await otpEntry.save();
+    throw new Error("Invalid OTP. Please try again.");
+  }
+
+  await WhatsappOtp.deleteOne({ mobile });
+  return { success: true, message: "Mobile verified successfully", mobile };
+};
+
+module.exports = {
+  createUser,
+  findUserById,
+  getUserProfileByToken,
+  getUserByEmail,
+  getAllUsers,
+  verifyEmailService,
+  confirmOtpService,
+  sendResetOtpService,
+  resetPasswordService,
+  sendWhatsAppOtpService,
+  verifyWhatsAppOtpService,
 }

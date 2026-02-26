@@ -1,15 +1,24 @@
-const express=require("express");
+const express = require("express");
 
-const router=express.Router();
-const authController=require("../controllers/auth.controller.js")
+const router = express.Router();
+const authController = require("../controllers/auth.controller.js")
 const {
-  verifyEmailService, 
+  verifyEmailService,
   confirmOtpService,
-  sendResetOtpService, 
-  resetPasswordService
-} = require("../services/user.service.js")
+  sendResetOtpService,
+  resetPasswordService,
+  sendWhatsAppOtpService,
+  verifyWhatsAppOtpService,
+} = require("../services/user.service.js");
 const { authLimiter, otpLimiter, passwordResetLimiter } = require("../middleware/rateLimiter.js");
-const { registerValidation, loginValidation, otpValidation, otpVerifyValidation } = require("../middleware/validators.js");
+const {
+  registerValidation,
+  loginValidation,
+  otpValidation,
+  otpVerifyValidation,
+  whatsappOtpValidation,
+  whatsappOtpVerifyValidation,
+} = require("../middleware/validators.js");
 const { sanitizeError, errorMessages } = require("../utils/errorHandler.js");
 
 
@@ -62,4 +71,28 @@ router.post("/reset-password", passwordResetLimiter, otpVerifyValidation, async 
 });
 
 
-module.exports=router;
+// ─── WhatsApp OTP – Send ───────────────────────────────────────────────────
+router.post("/send-whatsapp-otp", otpLimiter, whatsappOtpValidation, async (req, res) => {
+  try {
+    const { mobile } = req.body;
+    const result = await sendWhatsAppOtpService(mobile);
+    res.json(result);
+  } catch (err) {
+    const safeMessage = sanitizeError(err, "Failed to send WhatsApp OTP.");
+    res.status(400).json({ message: safeMessage });
+  }
+});
+
+// ─── WhatsApp OTP – Verify ─────────────────────────────────────────────────
+router.post("/verify-whatsapp-otp", otpLimiter, whatsappOtpVerifyValidation, async (req, res) => {
+  try {
+    const { mobile, otp } = req.body;
+    const result = await verifyWhatsAppOtpService(mobile, otp);
+    res.json(result);
+  } catch (err) {
+    const safeMessage = sanitizeError(err, "Failed to verify WhatsApp OTP.");
+    res.status(400).json({ message: safeMessage });
+  }
+});
+
+module.exports = router;

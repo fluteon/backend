@@ -41,6 +41,7 @@ const CustomersTable = ({ customers = [] }) => {
               <TableCell>Image</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
+              <TableCell>Mobile</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -53,6 +54,7 @@ const CustomersTable = ({ customers = [] }) => {
                 </TableCell>
                 <TableCell>{`${item.firstName || ''} ${item.lastName || ''}`}</TableCell>
                 <TableCell>{item.email}</TableCell>
+                <TableCell>{item.mobile ? `+91 ${item.mobile}` : '—'}</TableCell>
               </TableRow>
             ))}
           </TableBody>
