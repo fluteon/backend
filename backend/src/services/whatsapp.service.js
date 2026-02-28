@@ -91,4 +91,69 @@ const sendWhatsAppOtp = async (mobile, otp) => {
     }
 };
 
-module.exports = { sendWhatsAppOtp };
+/**
+ * Send Order Confirmation via WhatsApp using MSG91
+ * Template variables:
+ *   body_1 → customer name
+ *   body_2 → order ID (short)
+ *   body_3 → total amount (₹)
+ *   body_4 → track order URL
+ *
+ * @param {string} mobile  - 10-digit Indian mobile (no country code)
+ * @param {object} orderInfo - { name, orderId, amount, trackUrl }
+ */
+const sendWhatsAppOrderConfirmation = async (mobile, orderInfo) => {
+    const authKey = process.env.MSG91_AUTH_KEY;
+    const templateId = process.env.MSG91_ORDER_TEMPLATE_ID;       // new template name
+    const namespace = process.env.MSG91_TEMPLATE_NAMESPACE;
+    const integratedNum = process.env.MSG91_INTEGRATED_NUMBER;
+
+    if (!authKey || !templateId || !namespace || !integratedNum) {
+        console.warn("⚠️ MSG91 order template not configured — skipping WhatsApp notification");
+        return;
+    }
+
+    const mobileWithCode = `91${mobile}`;
+    const { name, orderId, amount, trackUrl } = orderInfo;
+
+    const payload = {
+        integrated_number: integratedNum,
+        content_type: "template",
+        payload: {
+            messaging_product: "whatsapp",
+            type: "template",
+            template: {
+                name: templateId,
+                language: { code: "en", policy: "deterministic" },
+                namespace: namespace,
+                to_and_components: [
+                    {
+                        to: [mobileWithCode],
+                        components: {
+                            body_1: { type: "text", value: name },
+                            body_2: { type: "text", value: orderId },
+                            body_3: { type: "text", value: String(amount) },
+                            body_4: { type: "text", value: trackUrl },
+                        },
+                    },
+                ],
+            },
+        },
+    };
+
+    try {
+        const response = await axios.post(
+            "https://api.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/",
+            payload,
+            { headers: { authkey: authKey, "Content-Type": "application/json" } }
+        );
+        const data = response.data;
+        if (data?.type === "error") throw new Error(data?.message || "MSG91 error");
+        console.log("✅ WhatsApp order confirmation sent to", mobileWithCode);
+    } catch (err) {
+        // Non-fatal — log but don't crash order creation
+        console.error("❌ WhatsApp order notification failed:", err?.response?.data?.message || err.message);
+    }
+};
+
+module.exports = { sendWhatsAppOtp, sendWhatsAppOrderConfirmation };

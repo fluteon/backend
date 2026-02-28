@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const orderItemSchema = new Schema({
- 
+
   product: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'products',
@@ -26,7 +26,7 @@ const orderItemSchema = new Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'users',
-    required: true,
+    required: false,  // null for guest orders
   },
   deliveryDate: {
     type: Date,

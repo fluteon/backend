@@ -1,8 +1,8 @@
-const express=require("express")
-const cors=require('cors');
+const express = require("express")
+const cors = require('cors');
 const helmet = require("helmet");
 const { generalLimiter } = require("./middleware/rateLimiter.js");
-const app=express();
+const app = express();
 
 // Trust proxy for Render deployment (required for rate limiting)
 app.set('trust proxy', 1);
@@ -38,8 +38,8 @@ app.use(cors({
   credentials: true
 }))
 
-app.get("/",(req,res)=>{
-    return res.status(200).send({message:"welcome to ecommerce api - node"})
+app.get("/", (req, res) => {
+  return res.status(200).send({ message: "welcome to ecommerce api - node" })
 })
 
 // Health check endpoint for Render and monitoring
@@ -56,7 +56,7 @@ app.get('/health', async (req, res) => {
       total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + 'MB'
     }
   };
-  
+
   try {
     // Check database connection
     if (mongoose.connection.readyState === 1) {
@@ -68,7 +68,7 @@ app.get('/health', async (req, res) => {
       health.dbStatus = 'unhealthy';
       health.status = 'degraded';
     }
-    
+
     const statusCode = health.status === 'ok' ? 200 : 503;
     res.status(statusCode).json(health);
   } catch (error) {
@@ -82,55 +82,58 @@ app.get('/health', async (req, res) => {
 
 const sitemapRoutes = require("./routes/sitemapRoutes.js");
 app.use('/', sitemapRoutes);
-const authRouter=require("./routes/auth.routes.js")
-app.use("/auth",authRouter)
+const authRouter = require("./routes/auth.routes.js")
+app.use("/auth", authRouter)
 
-const userRouter=require("./routes/user.routes.js");
-app.use("/api/users",userRouter)
+const userRouter = require("./routes/user.routes.js");
+app.use("/api/users", userRouter)
 
-const productRouter=require("./routes/product.routes.js");
-app.use("/api/products",productRouter);
+const productRouter = require("./routes/product.routes.js");
+app.use("/api/products", productRouter);
 
-const adminProductRouter=require("./routes/product.admin.routes.js");
-app.use("/api/admin/products",adminProductRouter);
+const adminProductRouter = require("./routes/product.admin.routes.js");
+app.use("/api/admin/products", adminProductRouter);
 
-const categoryRouter=require("./routes/category.routes.js");
-app.use("/api/admin/categories",categoryRouter);
+const categoryRouter = require("./routes/category.routes.js");
+app.use("/api/admin/categories", categoryRouter);
 
-const cartRouter=require("./routes/cart.routes.js")
+const cartRouter = require("./routes/cart.routes.js")
 app.use("/api/cart", cartRouter);
 
-const cartItemRouter=require("./routes/cartItem.routes.js")
-app.use("/api/cart_items",cartItemRouter);
+const cartItemRouter = require("./routes/cartItem.routes.js")
+app.use("/api/cart_items", cartItemRouter);
 
-const orderRouter=require("./routes/order.routes.js");
-app.use("/api/orders",orderRouter);
+const orderRouter = require("./routes/order.routes.js");
+app.use("/api/orders", orderRouter);
 
-const paymentRouter=require("./routes/payment.routes.js");
-app.use('/api/payments',paymentRouter)
+const guestOrderRouter = require("./routes/guestOrder.routes.js");
+app.use("/api/guest-orders", guestOrderRouter);
 
-const reviewRouter=require("./routes/review.routes.js");
-app.use("/api/reviews",reviewRouter);
+const paymentRouter = require("./routes/payment.routes.js");
+app.use('/api/payments', paymentRouter)
 
-const ratingRouter=require("./routes/rating.routes.js");
-app.use("/api/ratings",ratingRouter);
+const reviewRouter = require("./routes/review.routes.js");
+app.use("/api/reviews", reviewRouter);
 
-const userQueryRoute=require("./routes/userQueryRoute.js");
+const ratingRouter = require("./routes/rating.routes.js");
+app.use("/api/ratings", ratingRouter);
 
-app.use("/api/user",userQueryRoute);
+const userQueryRoute = require("./routes/userQueryRoute.js");
+
+app.use("/api/user", userQueryRoute);
 
 // for search 
 
 
 // admin routes handler
-const adminOrderRoutes=require("./routes/adminOrder.routes.js");
-app.use("/api/admin/orders",adminOrderRoutes);
+const adminOrderRoutes = require("./routes/adminOrder.routes.js");
+app.use("/api/admin/orders", adminOrderRoutes);
 
 const couponRoutes = require("../src/routes/coupon.routes.js")
 app.use("/api/coupons", couponRoutes);
 
 const chatRoutes = require("../src/routes/chatRoute.js")
-app.use("/api",chatRoutes)
+app.use("/api", chatRoutes)
 
 const homepageSectionRoutes = require("./routes/homepageSection.routes.js");
 app.use("/api/homepage-sections", homepageSectionRoutes);
@@ -138,4 +141,4 @@ app.use("/api/homepage-sections", homepageSectionRoutes);
 // // admin dashboard
 // app.use("/api/admin/orders", adminOrderRoutes);
 
-module.exports={app};
+module.exports = { app };

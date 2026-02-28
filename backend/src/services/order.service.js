@@ -160,7 +160,6 @@ async function placedOrder(orderId, paymentMeta = {}) {
   const order = await findOrderById(orderId);
   if (!order) throw new Error("Order not found");
 
-  // ✅ Apply payment meta if provided
   if (paymentMeta.paymentId) order.paymentDetails.paymentId = paymentMeta.paymentId;
   if (paymentMeta.method) order.paymentDetails.paymentMethod = paymentMeta.method;
   if (paymentMeta.transactionId) order.paymentDetails.transactionId = paymentMeta.transactionId;
@@ -171,16 +170,25 @@ async function placedOrder(orderId, paymentMeta = {}) {
 
   const updatedOrder = await order.save();
 
-  // ✅ Clear cart items after payment success
-  const productIds = order.orderItems.map((item) => item.product._id);
-  await CartItem.deleteMany({
-    userId: order.user._id,
-    product: { $in: productIds },
-  });
+  // Only clean cart for registered users (guests have no cart)
+  if (order.user && order.user._id) {
+    const productIds = order.orderItems.map((item) => item.product._id);
+    await CartItem.deleteMany({
+      userId: order.user._id,
+      product: { $in: productIds },
+    });
+  }
 
-  // ✅ Send order confirmation email
-  if (updatedOrder?.user?.email) {
-    await sendOrderConfirmationEmail(updatedOrder.user.email, updatedOrder);
+  // Send confirmation email if available
+  const emailAddress = order.isGuestOrder
+    ? order.guestInfo?.email
+    : updatedOrder?.user?.email;
+  if (emailAddress) {
+    try {
+      await sendOrderConfirmationEmail(emailAddress, updatedOrder);
+    } catch (e) {
+      console.error("Email send failed:", e.message);
+    }
   }
 
   return updatedOrder;
@@ -222,14 +230,14 @@ async function deliveredOrder(orderId) {
 
   await order.save();
 
-  // ✅ Reward Super Coins after delivery
-  console.log("🎯 Rewarding superCoins to:", order.user?._id, order.user?.email);
-
-  try {
-
-    await rewardeSuperCoins(order.user._id, order._id);
-  } catch (error) {
-    console.error("⚠️ Failed to reward Super Coins:", error.message);
+  // ✅ Reward Super Coins — only for registered users
+  if (!order.isGuestOrder && order.user?._id) {
+    console.log("🎯 Rewarding superCoins to:", order.user?._id, order.user?.email);
+    try {
+      await rewardeSuperCoins(order.user._id, order._id);
+    } catch (error) {
+      console.error("⚠️ Failed to reward Super Coins:", error.message);
+    }
   }
 
   const lowStockAlerts = [];
@@ -292,8 +300,7 @@ async function returnOrder(orderId, reason = "", description = "", imageUrls = [
 }
 
 
-async function approveReturnByAdmin(orderId, status, adminNote, rejectionMessage, returnTime)
- {
+async function approveReturnByAdmin(orderId, status, adminNote, rejectionMessage, returnTime) {
   const order = await findOrderById(orderId);
   if (!order) throw new Error("Order not Found with Id : " + orderId);
 
@@ -301,50 +308,50 @@ async function approveReturnByAdmin(orderId, status, adminNote, rejectionMessage
     throw new Error("Only requested returns can be handled.");
   }
 
-if (status === "RETURN_APPROVED") {
-  order.orderStatus = "RETURNED";
-  order.returnApprovedAt = new Date();
-   order.returnTime = returnTime;
+  if (status === "RETURN_APPROVED") {
+    order.orderStatus = "RETURNED";
+    order.returnApprovedAt = new Date();
+    order.returnTime = returnTime;
 
-  // 🪙 Deduct earned SuperCoins when return is approved
-  if (order.earnedSuperCoins > 0) {
-    console.log("🔄 Deducting", order.earnedSuperCoins, "SuperCoins from user", order.user._id);
-    
-    const user = await User.findById(order.user._id);
-    if (user) {
-      // Ensure we don't go negative
-      user.superCoins = Math.max(0, user.superCoins - order.earnedSuperCoins);
-      await user.save();
-      console.log("✅ SuperCoins deducted. New balance:", user.superCoins);
+    // 🪙 Deduct earned SuperCoins when return is approved
+    if (order.earnedSuperCoins > 0) {
+      console.log("🔄 Deducting", order.earnedSuperCoins, "SuperCoins from user", order.user._id);
+
+      const user = await User.findById(order.user._id);
+      if (user) {
+        // Ensure we don't go negative
+        user.superCoins = Math.max(0, user.superCoins - order.earnedSuperCoins);
+        await user.save();
+        console.log("✅ SuperCoins deducted. New balance:", user.superCoins);
+      }
     }
-  }
 
-  // 💰 Refund used SuperCoins if customer used coins for this order
-  if (order.usedSuperCoins > 0) {
-    console.log("💰 Refunding", order.usedSuperCoins, "SuperCoins to user", order.user._id);
-    
-    const user = await User.findById(order.user._id);
-    if (user) {
-      user.superCoins += order.usedSuperCoins;
-      await user.save();
-      console.log("✅ SuperCoins refunded. New balance:", user.superCoins);
+    // 💰 Refund used SuperCoins if customer used coins for this order
+    if (order.usedSuperCoins > 0) {
+      console.log("💰 Refunding", order.usedSuperCoins, "SuperCoins to user", order.user._id);
+
+      const user = await User.findById(order.user._id);
+      if (user) {
+        user.superCoins += order.usedSuperCoins;
+        await user.save();
+        console.log("✅ SuperCoins refunded. New balance:", user.superCoins);
+      }
     }
-  }
 
-} else if (status === "RETURN_REJECTED") {
-  order.orderStatus = "RETURN_REJECTED";
-  order.returnRejectedAt = new Date();
-  order.rejectionMessage = rejectionMessage || ""; // ✅ Save it here
-} else {
-  throw new Error("Invalid return status.");
-}
+  } else if (status === "RETURN_REJECTED") {
+    order.orderStatus = "RETURN_REJECTED";
+    order.returnRejectedAt = new Date();
+    order.rejectionMessage = rejectionMessage || ""; // ✅ Save it here
+  } else {
+    throw new Error("Invalid return status.");
+  }
 
 
   order.statusUpdatedAt = new Date();
 
   // 👇 Save this field
-order.adminNote = adminNote;
-order.statusUpdatedAt = new Date();
+  order.adminNote = adminNote;
+  order.statusUpdatedAt = new Date();
 
   const updatedOrder = await order.save();
   return updatedOrder;
@@ -383,7 +390,7 @@ async function findOrderById(orderId) {
 const usersOrderHistory = async (userId) => {
   const orders = await Order.find({
     user: userId,
-"paymentDetails.paymentStatus": "COMPLETED"
+    "paymentDetails.paymentStatus": "COMPLETED"
   })
     .populate({
       path: "orderItems",
@@ -438,17 +445,17 @@ async function getAdminDashboardOverview() {
   const customerCount = await User.countDocuments();
   const productCount = await Product.countDocuments();
   const recentUsers = await User
-  .find({})
-  .sort({ createdAt: -1 }) // Most recent first
-  .limit(5)
-  .select("firstName lastName email createdAt"); // Select only required fields
+    .find({})
+    .sort({ createdAt: -1 }) // Most recent first
+    .limit(5)
+    .select("firstName lastName email createdAt"); // Select only required fields
 
 
   const recentOrders = await Order.find()
-  .sort({ createdAt: -1 })
-  .limit(10)
-  .populate("orderItems.product", "title imageUrl brand") // adjust fields based on your schema
-  .select("totalDiscountedPrice orderStatus orderId orderItems createdAt"); // optional: pick fields
+    .sort({ createdAt: -1 })
+    .limit(10)
+    .populate("orderItems.product", "title imageUrl brand") // adjust fields based on your schema
+    .select("totalDiscountedPrice orderStatus orderId orderItems createdAt"); // optional: pick fields
 
   const totalRevenueAgg = await Order.aggregate([
     { $match: { "paymentDetails.paymentStatus": "COMPLETED" } },

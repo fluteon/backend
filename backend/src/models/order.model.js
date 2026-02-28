@@ -6,7 +6,16 @@ const orderSchema = new Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'users',
-    // required: true,
+    default: null,
+  },
+  isGuestOrder: {
+    type: Boolean,
+    default: false,
+  },
+  guestInfo: {
+    name: { type: String },
+    email: { type: String },
+    phone: { type: String },
   },
   orderItems: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -19,29 +28,28 @@ const orderSchema = new Schema({
   deliveryDate: {
     type: Date,
   },
-    statusUpdatedAt: {
+  statusUpdatedAt: {
     type: Date,
     default: Date.now,
   },
   shippingAddress: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'addresses',
+    type: mongoose.Schema.Types.Mixed, // supports both ObjectId ref and inline object (for guests)
   },
   paymentDetails: {
-    
+
     paymentMethod: {
       type: String,
     },
     transactionId: {
       type: String,
     },
-    paymentId:{
-      type:String,
+    paymentId: {
+      type: String,
     },
-    paymentStatus:{
-      type:String
+    paymentStatus: {
+      type: String
     }
-    
+
   },
   totalPrice: {
     type: Number,
@@ -64,34 +72,34 @@ const orderSchema = new Schema({
     required: true,
   },
   returnRequestedAt: {
-  type: Date,
-},
+    type: Date,
+  },
   returnRejectedAt: {
-  type: Date,
-},
-returnReason: {
-  type: String,
-},
-returnDescription: String,
-returnImages: [String],
-adminNote: {
-  type: String,
-},
-returnTime:{
-  type:"String"
-},
-rejectionMessage: {
-  type: String,
-  default: "",
-},
-usedSuperCoins:{
-  type:Number,
-  default:0
-},
-earnedSuperCoins:{
-  type:Number,
-  default:0
-},
+    type: Date,
+  },
+  returnReason: {
+    type: String,
+  },
+  returnDescription: String,
+  returnImages: [String],
+  adminNote: {
+    type: String,
+  },
+  returnTime: {
+    type: "String"
+  },
+  rejectionMessage: {
+    type: String,
+    default: "",
+  },
+  usedSuperCoins: {
+    type: Number,
+    default: 0
+  },
+  earnedSuperCoins: {
+    type: Number,
+    default: 0
+  },
   couponCode: {
     type: String,
     default: null,
