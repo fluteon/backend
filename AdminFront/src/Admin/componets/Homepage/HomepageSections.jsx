@@ -216,6 +216,8 @@ const HomepageSections = () => {
         );
         showSnackbar("Section updated successfully", "success");
       } else {
+        // Auto-assign order as next position
+        payload.order = sections.length + 1;
         await api.post("/api/homepage-sections", payload);
         showSnackbar("Section created successfully", "success");
       }

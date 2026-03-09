@@ -313,21 +313,20 @@ async function approveReturnByAdmin(orderId, status, adminNote, rejectionMessage
     order.returnApprovedAt = new Date();
     order.returnTime = returnTime;
 
-    // 🪙 Deduct earned SuperCoins when return is approved
-    if (order.earnedSuperCoins > 0) {
+    // 🪙 Deduct earned SuperCoins when return is approved — only for registered users
+    if (!order.isGuestOrder && order.user?._id && order.earnedSuperCoins > 0) {
       console.log("🔄 Deducting", order.earnedSuperCoins, "SuperCoins from user", order.user._id);
 
       const user = await User.findById(order.user._id);
       if (user) {
-        // Ensure we don't go negative
         user.superCoins = Math.max(0, user.superCoins - order.earnedSuperCoins);
         await user.save();
         console.log("✅ SuperCoins deducted. New balance:", user.superCoins);
       }
     }
 
-    // 💰 Refund used SuperCoins if customer used coins for this order
-    if (order.usedSuperCoins > 0) {
+    // 💰 Refund used SuperCoins if customer used coins for this order — only for registered users
+    if (!order.isGuestOrder && order.user?._id && order.usedSuperCoins > 0) {
       console.log("💰 Refunding", order.usedSuperCoins, "SuperCoins to user", order.user._id);
 
       const user = await User.findById(order.user._id);
@@ -407,7 +406,13 @@ const usersOrderHistory = async (userId) => {
 async function getAllOrders(page = 1, pageSize = 10, status = "", sort = "Newest") {
   const skip = (page - 1) * pageSize;
 
-  const filter = { "paymentDetails.paymentStatus": "COMPLETED" };
+  // Show paid orders + all guest orders (including COD where payment is pending)
+  const filter = {
+    $or: [
+      { "paymentDetails.paymentStatus": "COMPLETED" },
+      { isGuestOrder: true },
+    ],
+  };
   if (status) filter.orderStatus = status;
 
   const sortOption = sort === "Oldest" ? { createdAt: 1 } : { createdAt: -1 };

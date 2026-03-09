@@ -52,7 +52,9 @@ const customerProductReducer = (state = initialState, action) => {
         return {
           ...state,
           loading: false,
-          products: [...state.products, action.payload],
+          products: state.products?.content
+            ? { ...state.products, content: [...state.products.content, action.payload] }
+            : { content: [action.payload], totalPages: 1 },
         };
       case CREATE_PRODUCT_FAILURE:
         return {
@@ -71,9 +73,15 @@ const customerProductReducer = (state = initialState, action) => {
         return {
           ...state,
           loading: false,
-          products: state.products.map((product) =>
-            product._id === action.payload._id ? action.payload : product
-          ),
+          products: state.products?.content
+            ? {
+                ...state.products,
+                content: state.products.content.map((product) =>
+                  product._id === action.payload._id ? action.payload : product
+                ),
+              }
+            : state.products,
+          updateProduct: action.payload,
         };
       case UPDATE_PRODUCT_FAILURE:
         return {

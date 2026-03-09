@@ -67,9 +67,12 @@ const productReducer = (state = initialState, action) => {
       return {
         ...state,
         loading: false,
-        products: state.products.map((product) =>
-          product._id === action.payload._id ? action.payload : product
-        ),
+        products: Array.isArray(state.products)
+          ? state.products.map((product) =>
+              product._id === action.payload._id ? action.payload : product
+            )
+          : [],
+        updateProduct: action.payload,
       };
     case UPDATE_PRODUCT_FAILURE:
       return {
@@ -87,9 +90,9 @@ const productReducer = (state = initialState, action) => {
       return {
         ...state,
         loading: false,
-        products: state.products.filter(
-          (product) => product._id !== action.payload
-        ),
+        products: Array.isArray(state.products)
+          ? state.products.filter((product) => product._id !== action.payload)
+          : [],
       };
     case DELETE_PRODUCT_FAILURE:
       return {
