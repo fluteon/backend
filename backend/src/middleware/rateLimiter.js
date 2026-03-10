@@ -75,11 +75,24 @@ const reviewLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Partner application limiter - 5 per hour per IP
+const partnerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,
+  message: {
+    message: 'Too many partner applications, please try again later',
+    retryAfter: '1 hour'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 module.exports = {
   generalLimiter,
   authLimiter,
   otpLimiter,
   passwordResetLimiter,
   paymentLimiter,
-  reviewLimiter
+  reviewLimiter,
+  partnerLimiter
 };

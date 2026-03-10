@@ -33,6 +33,7 @@ import Coupan from "./componets/Coupan/Coupan";
 import ReviewsTable from "./componets/Reviews/ReviewsTable";
 import HomepageSections from "./componets/Homepage/HomepageSections";
 import CategoryManagement from "./componets/CategoryManagement/CategoryManagement";
+import PartnerApplications from "./componets/Partners/PartnerApplications";
 import { auth } from "../firebase";
 
 const drawerWidth = 240;
@@ -46,7 +47,8 @@ const menu = [
   { name: "Homepage Sections", path: "/homepage-sections" },
   { name: "Categories", path: "/categories" },
   { name: "Add Product", path: "/product/create" },
-  { name: "Add Coupan Code", path: "/coupan"}
+  { name: "Add Coupan Code", path: "/coupan"},
+  { name: "Partner Applications", path: "/partners" }
 ];
 
 
@@ -184,6 +186,7 @@ export default function AdminPannel() {
   <Route path="categories" element={<CategoryManagement />} />
   <Route path="demo" element={<DemoAdmin />} />
   <Route path="coupan" element={<Coupan />} />
+  <Route path="partners" element={<PartnerApplications />} />
 </Routes>
 
 

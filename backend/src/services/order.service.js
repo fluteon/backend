@@ -7,6 +7,7 @@ const cartService = require("../services/cart.service.js");
 const CartItem = require("../models/cartItem.model.js");
 const mongoose = require("mongoose");
 const { sendOrderConfirmationEmail } = require("../config/mailer.js");
+const { notifyOwnerNewOrder } = require("../services/ownerNotification.service.js");
 
 // async function createOrder(user, shippAddress, usedSuperCoins = 0) {
 //   let address;
@@ -190,6 +191,11 @@ async function placedOrder(orderId, paymentMeta = {}) {
       console.error("Email send failed:", e.message);
     }
   }
+
+  // Notify owner via WhatsApp (non-blocking)
+  notifyOwnerNewOrder(updatedOrder).catch((e) =>
+    console.error("Owner order alert failed:", e.message)
+  );
 
   return updatedOrder;
 }

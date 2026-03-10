@@ -138,6 +138,9 @@ app.use("/api", chatRoutes)
 const homepageSectionRoutes = require("./routes/homepageSection.routes.js");
 app.use("/api/homepage-sections", homepageSectionRoutes);
 
+const partnerRoutes = require("./routes/partner.routes.js");
+app.use("/api/partners", partnerRoutes);
+
 // // admin dashboard
 // app.use("/api/admin/orders", adminOrderRoutes);
 

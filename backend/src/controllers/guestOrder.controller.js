@@ -3,6 +3,7 @@ const OrderItem = require("../models/orderItems.js");
 const Product = require("../models/product.model.js");
 const { sendWhatsAppOrderConfirmation } = require("../services/whatsapp.service.js");
 const { sendOrderConfirmationEmail } = require("../config/sendOrderConfirmation.brevo.js");
+const { notifyOwnerNewOrder } = require("../services/ownerNotification.service.js");
 
 /**
  * POST /api/guest-orders
@@ -110,10 +111,12 @@ const createGuestOrder = async (req, res) => {
                 ? sendWhatsAppOrderConfirmation(phone10, notifInfo)
                 : Promise.resolve(),
             sendOrderConfirmationEmail(guestInfo.email, notifInfo),
+            notifyOwnerNewOrder(populated),
         ]).then(results => {
+            const labels = ["WhatsApp", "Email", "Owner Alert"];
             results.forEach((r, i) => {
                 if (r.status === "rejected") {
-                    console.error(`❌ Notification ${i === 0 ? "WhatsApp" : "Email"} failed:`, r.reason);
+                    console.error(`❌ Notification ${labels[i]} failed:`, r.reason);
                 }
             });
         });
