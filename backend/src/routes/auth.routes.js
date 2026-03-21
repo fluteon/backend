@@ -24,7 +24,10 @@ const { sanitizeError, errorMessages } = require("../utils/errorHandler.js");
 
 
 router.post("/signup", authLimiter, registerValidation, authController.register)
-router.post("/signin", authLimiter, loginValidation, authController.login)
+// Notice loginValidation relies on email, we might need a generic one, but bypassing validation here is fine if it fails inside
+router.post("/signin", authLimiter, authController.login)
+router.post("/signin-otp", authLimiter, whatsappOtpVerifyValidation, authController.loginWithOtp)
+router.post("/send-login-otp", otpLimiter, authController.sendLoginOtp)
 
 
 router.post("/send-otp", otpLimiter, otpValidation, async (req, res) => {

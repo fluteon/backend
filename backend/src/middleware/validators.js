@@ -21,7 +21,7 @@ const registerValidation = [
     .trim()
     .isEmail()
     .withMessage('Valid email is required')
-    .normalizeEmail()
+    .normalizeEmail({ gmail_remove_dots: false })
     .isLength({ max: 100 })
     .withMessage('Email too long'),
 
@@ -58,7 +58,7 @@ const loginValidation = [
     .trim()
     .isEmail()
     .withMessage('Valid email is required')
-    .normalizeEmail(),
+    .normalizeEmail({ gmail_remove_dots: false }),
 
   body('password')
     .notEmpty()
@@ -73,7 +73,7 @@ const otpValidation = [
     .trim()
     .isEmail()
     .withMessage('Valid email is required')
-    .normalizeEmail(),
+    .normalizeEmail({ gmail_remove_dots: false }),
 
   validate
 ];
@@ -84,7 +84,7 @@ const otpVerifyValidation = [
     .trim()
     .isEmail()
     .withMessage('Valid email is required')
-    .normalizeEmail(),
+    .normalizeEmail({ gmail_remove_dots: false }),
 
   body('otp')
     .trim()
@@ -181,7 +181,7 @@ const contactValidation = [
     .trim()
     .isEmail()
     .withMessage('Valid email is required')
-    .normalizeEmail(),
+    .normalizeEmail({ gmail_remove_dots: false }),
 
   body('message')
     .trim()

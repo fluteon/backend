@@ -15,7 +15,7 @@ require("dotenv").config();
 const createUser = async (userData) => {
   try {
 
-    let { firstName, lastName, email, password, role } = userData;
+    let { firstName, lastName, email, password, role, mobile } = userData;
 
     const isUserExist = await User.findOne({ email });
 
@@ -26,7 +26,7 @@ const createUser = async (userData) => {
 
     password = await bcrypt.hash(password, 8);
 
-    const user = await User.create({ firstName, lastName, email, password, role })
+    const user = await User.create({ firstName, lastName, email, password, role, mobile })
 
     console.log("user ", user)
 
@@ -61,6 +61,18 @@ const getUserByEmail = async (email) => {
 
   } catch (error) {
     console.log("error - ", error.message)
+    throw new Error(error.message)
+  }
+}
+
+const getUserByIdentifier = async (identifier) => {
+  try {
+    const user = await User.findOne({ 
+      $or: [{ email: identifier }, { mobile: identifier }] 
+    });
+    return user;
+  } catch (error) {
+    console.log("error in getUserByIdentifier - ", error.message)
     throw new Error(error.message)
   }
 }
@@ -185,9 +197,7 @@ const sendEmail = async (email, otp) => {
 
 
 const generateOtp = () => {
-  const firstDigit = Math.floor(Math.random() * 9) + 1;
-  const remaining = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  return parseInt(`${firstDigit}${remaining}`);
+  return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 const verifyEmailService = async (email) => {
@@ -281,9 +291,11 @@ const sendResetOtpService = async (email) => {
   return { message: "Reset OTP sent successfully", email };
 };
 
-const resetPasswordService = async (email, newPassword) => {
-  const user = await User.findOne({ email });
-  if (!user) throw new Error("No user found with this email");
+const resetPasswordService = async (identifier, newPassword) => {
+  const user = await User.findOne({ 
+    $or: [{ email: identifier }, { mobile: identifier }] 
+  });
+  if (!user) throw new Error("No user found with this email or mobile number");
 
   const hashed = await bcrypt.hash(newPassword, 8);
   user.password = hashed;
@@ -325,7 +337,7 @@ const sendWhatsAppOtpService = async (mobile) => {
   }
 
   // Generate 6-digit OTP
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const otp = generateOtp();
 
   await WhatsappOtp.findOneAndUpdate(
     { mobile },
@@ -373,11 +385,30 @@ const verifyWhatsAppOtpService = async (mobile, userOtp) => {
   return { success: true, message: "Mobile verified successfully", mobile };
 };
 
+const sendLoginOtpService = async (identifier) => {
+  const user = await getUserByIdentifier(identifier);
+  
+  if (!user) {
+    throw new Error("Account not found. Please sign up.");
+  }
+
+  // Determine if identifier is email or mobile (contains '@' is a simple check)
+  const isEmail = identifier.includes('@');
+
+  if (isEmail) {
+    throw new Error("OTP login is only available for mobile numbers. Please use your password to login with email.");
+  } else {
+    // Send standard WhatsApp OTP using existing service logic
+    return await sendWhatsAppOtpService(identifier);
+  }
+};
+
 module.exports = {
   createUser,
   findUserById,
   getUserProfileByToken,
   getUserByEmail,
+  getUserByIdentifier,
   getAllUsers,
   verifyEmailService,
   confirmOtpService,
@@ -385,4 +416,5 @@ module.exports = {
   resetPasswordService,
   sendWhatsAppOtpService,
   verifyWhatsAppOtpService,
+  sendLoginOtpService,
 }

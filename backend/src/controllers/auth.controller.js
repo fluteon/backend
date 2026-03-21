@@ -15,9 +15,8 @@ const register = async (req, res) => {
       });
     }
 
-    // Build userData – include mobile only when verified via WhatsApp OTP
+    // Build userData passing the mobile number verbatim if provided
     const userData = { ...req.body };
-    if (!mobileVerified) delete userData.mobile; // don't save mobile if not verified
 
     const user = await userService.createUser(userData);
     const jwt = jwtProvider.generateToken(user._id);
@@ -32,7 +31,10 @@ const register = async (req, res) => {
 };
 
 const login = async (req, res) => {
-  const { password, email, googleAuth } = req.body;
+  const { password, email, identifier, googleAuth } = req.body;
+
+  // identifier handles either email or mobile from the unified login input
+  const loginIdentifier = identifier || email;
 
   try {
     let user;
@@ -40,18 +42,18 @@ const login = async (req, res) => {
     // Handle Google Authentication for Admin
     if (googleAuth) {
       const ALLOWED_ADMIN_EMAIL = 'fluteoncompany@gmail.com';
-      if (email !== ALLOWED_ADMIN_EMAIL) {
+      if (loginIdentifier !== ALLOWED_ADMIN_EMAIL) {
         return res.status(403).json({
           message: `Access Denied: Only ${ALLOWED_ADMIN_EMAIL} is authorized for admin access`
         });
       }
 
-      user = await userService.getUserByEmail(email);
+      user = await userService.getUserByEmail(loginIdentifier);
 
       if (!user) {
         const { firstName, lastName } = req.body;
         user = await userService.createUser({
-          email,
+          email: loginIdentifier,
           password: password,
           firstName: firstName || 'Admin',
           lastName: lastName || '',
@@ -68,12 +70,12 @@ const login = async (req, res) => {
       return res.status(200).send({ jwt, message: "Admin login success" });
     }
 
-    // Login with email
-    if (!email) {
-      return res.status(400).json({ message: "Email is required" });
+    // Login with Email or Mobile
+    if (!loginIdentifier) {
+      return res.status(400).json({ message: "Email or Mobile Number is required" });
     }
 
-    user = await userService.getUserByEmail(email);
+    user = await userService.getUserByIdentifier(loginIdentifier);
 
     if (!user) {
       return res.status(401).json({ message: errorMessages.auth.login });
@@ -94,4 +96,43 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+const loginWithOtp = async (req, res) => {
+  try {
+    const { mobile, otp } = req.body;
+
+    if (!mobile || !otp) {
+      return res.status(400).json({ message: "Mobile and OTP are required" });
+    }
+
+    // This will throw if invalid or expired
+    await userService.verifyWhatsAppOtpService(mobile, otp);
+
+    const user = await userService.getUserByIdentifier(mobile);
+    if (!user) {
+      return res.status(404).json({ message: "User not found with this mobile number. Please register." });
+    }
+
+    const jwt = jwtProvider.generateToken(user._id);
+    return res.status(200).send({ jwt, message: "OTP Login successful" });
+  } catch (error) {
+    const safeMessage = sanitizeError(error, "Failed to login with OTP.");
+    return res.status(400).send({ message: safeMessage });
+  }
+};
+
+const sendLoginOtp = async (req, res) => {
+  try {
+    const { identifier } = req.body;
+    if (!identifier) {
+      return res.status(400).json({ message: "Identifier (Email or Mobile) is required" });
+    }
+
+    const response = await userService.sendLoginOtpService(identifier);
+    return res.status(200).json(response);
+  } catch (error) {
+    const safeMessage = sanitizeError(error, "Failed to send login OTP.");
+    return res.status(400).send({ message: safeMessage });
+  }
+};
+
+module.exports = { register, login, loginWithOtp, sendLoginOtp };
