@@ -551,50 +551,7 @@ import MuiAlert from '@mui/material/Alert';
 const Alert = React.forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
-const categoryHierarchy = {
-  women: {
-    bottom_wear: [
-      { value: "formal_pants", label: "Formal Pants" },
-      { value: "cotton_pants", label: "Cotton Pants" },
-      { value: "linen_pants", label: "Linen Pants" },
-      { value: "cargos", label: "Cargo" },
-      { value: "track_pants", label: "Track Pants" },
-      { value: "jeans", label: "Jeans" },
-      { value: "skirts", label: "Skirts" },
-    ],
-    blazer: [
-      { value: "blazers", label: "Blazer" },
-      { value: "blazers_sets", label: "Blazer Sets" },
-    ],
-    shirts: [
-      { value: "formal_shirts", label: "Formal Shirts" },
-      { value: "satin_shirts", label: "Satin Shirts" },
-      { value: "hidden_button_shirts", label: "Hidden Button Shirts" },
-    ],
-    tops: [
-      { value: "tanic_tops", label: "Tanic Top" },
-      { value: "tank_tops", label: "Tank Top" },
-      { value: "peplum_tops", label: "Peplum Top" },
-      { value: "crop_tops", label: "Crop Tops" },
-    ],
-    kurtis: [
-      { value: "office_wear_kurtis", label: "Office Wear" },
-      { value: "a_line_kurtis", label: "A-Line Kurtis" },
-      { value: "kalamkari", label: "Kalamkari Kurti" },
-    ],
-    swimming_costume: [
-      { value: "one_piece", label: "One Piece" },
-      { value: "bikini", label: "Bikini" },
-      { value: "swim_sets", label: "Swim Sets" },
-    ],
-    tummytucker: [
-      { value: "high_waist", label: "High Waist" },
-      { value: "full_body", label: "Full Body" },
-      { value: "waist_trainer", label: "Waist Trainer" },
-    ],
-  },
-  
-};
+// category hierarchy fetched dynamically
 
 
 
@@ -604,6 +561,15 @@ const productToUpdate = location.state?.product;
   // _id will be there if you're editing
 
   const [sizeChart, setSizeChart] = useState(null);
+  const [categoryHierarchy, setCategoryHierarchy] = useState({});
+
+  useEffect(() => {
+    import("../../../config/api").then(({ default: api }) => {
+      api.get("/api/admin/categories/hierarchy")
+        .then(res => setCategoryHierarchy(res.data))
+        .catch(err => console.error("Failed to load categories", err));
+    });
+  }, []);
   const [images, setImages] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
   const [success, setSuccess] = useState(false);
@@ -688,7 +654,7 @@ useEffect(() => {
       setPreviewImages(imageUrl);
     }
   }
-}, [productToUpdate]);
+}, [productToUpdate, categoryHierarchy]);
 
 
 
@@ -727,17 +693,19 @@ useEffect(() => {
 
     if (sourceIndex === destinationIndex) return;
 
-    // Reorder images
-    const reorderedImages = Array.from(images);
-    const [movedImage] = reorderedImages.splice(sourceIndex, 1);
-    reorderedImages.splice(destinationIndex, 0, movedImage);
+    // Only reorder File objects if there are any (new uploads)
+    // When editing with existing images only, `images` is [] and must stay []
+    if (images.length > 0) {
+      const reorderedImages = Array.from(images);
+      const [movedImage] = reorderedImages.splice(sourceIndex, 1);
+      reorderedImages.splice(destinationIndex, 0, movedImage);
+      setImages(reorderedImages);
+    }
 
-    // Reorder previews
+    // Always reorder previews
     const reorderedPreviews = Array.from(previewImages);
     const [movedPreview] = reorderedPreviews.splice(sourceIndex, 1);
     reorderedPreviews.splice(destinationIndex, 0, movedPreview);
-
-    setImages(reorderedImages);
     setPreviewImages(reorderedPreviews);
 
     console.log("🔄 Images reordered:", sourceIndex, "→", destinationIndex);
@@ -968,13 +936,13 @@ useEffect(() => {
 }, [productData.thirdLavelCategory, productToUpdate]);
 
 
-  const secondLevelOptions = productData.topLavelCategory
+  const secondLevelOptions = productData.topLavelCategory && categoryHierarchy[productData.topLavelCategory]
     ? Object.keys(categoryHierarchy[productData.topLavelCategory])
     : [];
 
   const thirdLevelOptions = productData.topLavelCategory &&
     productData.secondLavelCategory &&
-    categoryHierarchy[productData.topLavelCategory][productData.secondLavelCategory]
+    categoryHierarchy[productData.topLavelCategory]?.[productData.secondLavelCategory]
       ? categoryHierarchy[productData.topLavelCategory][productData.secondLavelCategory]
       : [];
 

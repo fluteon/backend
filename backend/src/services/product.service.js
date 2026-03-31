@@ -201,8 +201,8 @@ async function updateProduct(productId, reqData, files = []) {
       console.log("⚠️ Category data incomplete, keeping original category");
     }
 
-    // ✅ Update product fields
-    product.set({
+    // ✅ Update product fields using findByIdAndUpdate to avoid Mongoose subdocument hang
+    const updateFields = {
       title: reqData.title?.trim(),
       description: reqData.description?.trim(),
       price: Number(reqData.price),
@@ -210,20 +210,36 @@ async function updateProduct(productId, reqData, files = []) {
       discountPersent: Number(reqData.discountPersent),
       quantity: Number(reqData.quantity),
       brand: reqData.brand?.trim(),
-color:
-  typeof reqData.color === "string"
-    ? reqData.color.startsWith("[")
-      ? JSON.parse(reqData.color)
-      : [reqData.color]
-    : reqData.color,
+      color:
+        typeof reqData.color === "string"
+          ? reqData.color.startsWith("[")
+            ? JSON.parse(reqData.color)
+            : [reqData.color]
+          : reqData.color,
       sizes,
       imageUrl: imageUrls,
       category: categoryId,
-    });
+    };
 
-    await product.save();
-    const updated = await Product.findById(productId).populate("category");
+    console.log("💾 Saving product update...");
+    const query = Product.findByIdAndUpdate(
+      productId,
+      { $set: updateFields },
+      { new: true } // Removed runValidators to prevent known Mongoose hang bug with subdocument arrays
+    );
+    
+    console.log("⏳ Awaiting findByIdAndUpdate...");
+    let updated = await query.exec();
+    
+    if (!updated) {
+      console.log("❌ Product not found during update");
+      throw new Error("Product update failed - not found after save");
+    }
+    
+    console.log("🔄 Populating category...");
+    await updated.populate("category");
 
+    console.log("✅ Product saved successfully");
     return updated;
 
   } catch (error) {

@@ -37,42 +37,7 @@ import {
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import api from "../../../config/api";
 
-// Category hierarchy matching the product creation form
-const categoryHierarchy = {
-  women: {
-    bottom_wear: [
-      { value: "formal_pants", label: "Formal Pants" },
-      { value: "cotton_pants", label: "Cotton Pants" },
-      { value: "linen_pants", label: "Linen Pants" },
-      { value: "cargos", label: "Cargo" },
-      { value: "track_pants", label: "Track Pants" },
-      { value: "jeans", label: "Jeans" },
-      { value: "skirts", label: "Skirts" },
-      { value: "tummytucker", label: "Tummytucker" },
-      { value: "swimmingsuit", label: "Swimming Suit" },
-    ],
-    blazer: [
-      { value: "blazers", label: "Blazer" },
-      { value: "blazers_sets", label: "Blazer Sets" },
-    ],
-    shirts: [
-      { value: "formal_shirts", label: "Formal Shirts" },
-      { value: "satin_shirts", label: "Satin Shirts" },
-      { value: "hidden_button_shirts", label: "Hidden Button Shirts" },
-    ],
-    tops: [
-      { value: "tanic_tops", label: "Tanic Top" },
-      { value: "tunic_tops", label: "Tank Top" },
-      { value: "peplum_tops", label: "Peplum Top" },
-      { value: "crop_tops", label: "Crop Tops" },
-    ],
-    kurtis: [
-      { value: "office_wear_kurtis", label: "Office Wear" },
-      { value: "a_line_kurtis", label: "A-Line Kurtis" },
-      { value: "kalamkari", label: "Kalamkari Kurti" },
-    ],
-  },
-};
+// Category hierarchy will be fetched dynamically from the backend
 
 const HomepageSections = () => {
   const [sections, setSections] = useState([]);
@@ -80,6 +45,7 @@ const HomepageSections = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [editingSection, setEditingSection] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const [categoryHierarchy, setCategoryHierarchy] = useState({});
   
   const [formData, setFormData] = useState({
     topLevelCategory: "",
@@ -93,6 +59,9 @@ const HomepageSections = () => {
 
   useEffect(() => {
     fetchSections();
+    api.get("/api/admin/categories/hierarchy")
+      .then(res => setCategoryHierarchy(res.data))
+      .catch(err => console.error("Failed to load categories", err));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -449,7 +418,7 @@ const HomepageSections = () => {
                 }
                 label="Second Level Category"
               >
-                {formData.topLevelCategory &&
+                {formData.topLevelCategory && categoryHierarchy[formData.topLevelCategory] &&
                   Object.keys(categoryHierarchy[formData.topLevelCategory]).map(
                     (secondKey) => (
                       <MenuItem key={secondKey} value={secondKey}>
@@ -466,9 +435,9 @@ const HomepageSections = () => {
               <Select
                 value={formData.thirdLevelCategory}
                 onChange={(e) => {
-                  const selectedOption = categoryHierarchy[formData.topLevelCategory][
+                  const selectedOption = categoryHierarchy[formData.topLevelCategory]?.[
                     formData.secondLevelCategory
-                  ].find((opt) => opt.value === e.target.value);
+                  ]?.find((opt) => opt.value === e.target.value);
                   
                   setFormData({
                     ...formData,
@@ -480,9 +449,9 @@ const HomepageSections = () => {
               >
                 {formData.topLevelCategory &&
                   formData.secondLevelCategory &&
-                  categoryHierarchy[formData.topLevelCategory][
+                  categoryHierarchy[formData.topLevelCategory]?.[
                     formData.secondLevelCategory
-                  ].map((option) => (
+                  ]?.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
                     </MenuItem>

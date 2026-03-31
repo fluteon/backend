@@ -35,8 +35,8 @@ const productSchema = new mongoose.Schema({
     quantity:{type:Number}
   }], 
 imageUrl: {
-  type: [String], // or simply `imageUrl: [String]` as shorthand
-  validate: [arr => arr.length <= 4, 'Maximum 4 images allowed'],
+  type: [String],
+  validate: [arr => arr.length <= 10, 'Maximum 10 images allowed'],
 },
 
   ratings: [

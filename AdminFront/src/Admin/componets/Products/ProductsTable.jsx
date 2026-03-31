@@ -29,56 +29,23 @@ import Tooltip from "@mui/material/Tooltip";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import LowStockModal from "../Orders/LowStockModal";
 
-// Category hierarchy for filtering
-const categoryHierarchy = {
-  women: {
-    bottom_wear: [
-      { value: "formal_pants", label: "Formal Pants" },
-      { value: "cotton_pants", label: "Cotton Pants" },
-      { value: "linen_pants", label: "Linen Pants" },
-      { value: "cargos", label: "Cargo" },
-      { value: "track_pants", label: "Track Pants" },
-      { value: "jeans", label: "Jeans" },
-      { value: "skirts", label: "Skirts" },
-    ],
-    blazer: [
-      { value: "blazers", label: "Blazer" },
-      { value: "blazers_sets", label: "Blazer Sets" },
-    ],
-    shirts: [
-      { value: "formal_shirts", label: "Formal Shirts" },
-      { value: "satin_shirts", label: "Satin Shirts" },
-      { value: "hidden_button_shirts", label: "Hidden Button Shirts" },
-    ],
-    tops: [
-      { value: "tanic_tops", label: "Tanic Top" },
-      { value: "tank_tops", label: "Tank Top" },
-      { value: "peplum_tops", label: "Peplum Top" },
-      { value: "crop_tops", label: "Crop Tops" },
-    ],
-    kurtis: [
-      { value: "office_wear_kurtis", label: "Office Wear" },
-      { value: "a_line_kurtis", label: "A-Line Kurtis" },
-      { value: "kalamkari", label: "Kalamkari Kurti" },
-    ],
-    swimming_costume: [
-      { value: "one_piece", label: "One Piece" },
-      { value: "bikini", label: "Bikini" },
-      { value: "swim_sets", label: "Swim Sets" },
-    ],
-    tummytucker: [
-      { value: "high_waist", label: "High Waist" },
-      { value: "full_body", label: "Full Body" },
-      { value: "waist_trainer", label: "Waist Trainer" },
-    ],
-  },
-};
+// Category hierarchy fetched dynamically
 
 const ProductsTable = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { customersProduct } = useSelector((store) => store);
+  const [categoryHierarchy, setCategoryHierarchy] = useState({});
+
+  useEffect(() => {
+    import("../../../config/api").then(({ default: api }) => {
+      api.get("/api/admin/categories/hierarchy")
+        .then(res => setCategoryHierarchy(res.data))
+        .catch(err => console.error("Failed to load categories", err));
+    });
+  }, []);
+
   const [filterValue, setFilterValue] = useState({
     availability: "",
     topLevelCategory: "",
@@ -238,7 +205,7 @@ const handleOpenModal = (sizes) => {
                 onChange={(e) => handleFilterChange(e, "secondLevelCategory")}
               >
                 <MenuItem value="">All</MenuItem>
-                {filterValue.topLevelCategory &&
+                {filterValue.topLevelCategory && categoryHierarchy[filterValue.topLevelCategory] &&
                   Object.keys(categoryHierarchy[filterValue.topLevelCategory]).map(
                     (secondKey) => (
                       <MenuItem key={secondKey} value={secondKey}>
@@ -263,7 +230,7 @@ const handleOpenModal = (sizes) => {
                 <MenuItem value="">All</MenuItem>
                 {filterValue.topLevelCategory &&
                   filterValue.secondLevelCategory &&
-                  categoryHierarchy[filterValue.topLevelCategory][filterValue.secondLevelCategory].map(
+                  categoryHierarchy[filterValue.topLevelCategory]?.[filterValue.secondLevelCategory]?.map(
                     (thirdOption) => (
                       <MenuItem key={thirdOption.value} value={thirdOption.value}>
                         {thirdOption.label}

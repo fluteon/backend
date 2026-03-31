@@ -28,49 +28,7 @@ const Alert = React.forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
 
-const categoryHierarchy = {
-  women: {
-    bottom_wear: [
-      { value: "formal_pants", label: "Formal Pants" },
-      { value: "cotton_pants", label: "Cotton Pants" },
-      { value: "linen_pants", label: "Linen Pants" },
-      { value: "cargos", label: "Cargo" },
-      { value: "track_pants", label: "Track Pants" },
-      { value: "jeans", label: "Jeans" },
-      { value: "skirts", label: "Skirts" },
-    ],
-    blazer: [
-      { value: "blazers", label: "Blazer" },
-      { value: "blazers_sets", label: "Blazer Sets" },
-    ],
-    shirts: [
-      { value: "formal_shirts", label: "Formal Shirts" },
-      { value: "satin_shirts", label: "Satin Shirts" },
-      { value: "hidden_button_shirts", label: "Hidden Button Shirts" },
-    ],
-    tops: [
-      { value: "tanic_tops", label: "Tanic Top" },
-      { value: "tank_tops", label: "Tank Top" },
-      { value: "peplum_tops", label: "Peplum Top" },
-      { value: "crop_tops", label: "Crop Tops" },
-    ],
-    kurtis: [
-      { value: "office_wear_kurtis", label: "Office Wear" },
-      { value: "a_line_kurtis", label: "A-Line Kurtis" },
-      { value: "kalamkari", label: "Kalamkari Kurti" },
-    ],
-    swimming_costume: [
-      { value: "one_piece", label: "One Piece" },
-      { value: "bikini", label: "Bikini" },
-      { value: "swim_sets", label: "Swim Sets" },
-    ],
-    tummytucker: [
-      { value: "high_waist", label: "High Waist" },
-      { value: "full_body", label: "Full Body" },
-      { value: "waist_trainer", label: "Waist Trainer" },
-    ],
-  },
-};
+// category hierarchy fetched dynamically
 
 const UpdateProductForm = () => {
   const dispatch = useDispatch();
@@ -79,6 +37,15 @@ const UpdateProductForm = () => {
   const { customersProduct } = useSelector((store) => store);
 
   const [sizeChart, setSizeChart] = useState(null);
+  const [categoryHierarchy, setCategoryHierarchy] = useState({});
+
+  useEffect(() => {
+    import("../../../config/api").then(({ default: api }) => {
+      api.get("/api/admin/categories/hierarchy")
+        .then(res => setCategoryHierarchy(res.data))
+        .catch(err => console.error("Failed to load categories", err));
+    });
+  }, []);
   const [images, setImages] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
   const [imageIds, setImageIds] = useState([]); // Stable IDs for drag-drop
@@ -158,7 +125,7 @@ const UpdateProductForm = () => {
         setImageIds(product.imageUrl.map((url, idx) => `img-${url.substring(url.lastIndexOf('/') + 1)}-${idx}`));
       }
     }
-  }, [customersProduct.product]);
+  }, [customersProduct.product, categoryHierarchy]);
 
   function findCategoryPath(value) {
     for (const top in categoryHierarchy) {
@@ -347,16 +314,30 @@ const UpdateProductForm = () => {
 
     formData.append("productId", productData._id);
 
+    // Debug: log what's being sent
+    console.log("📤 Submitting update...");
+    console.log("  images (File objects):", images.length);
+    console.log("  previewImages (URLs):", previewImages.length);
+    console.log("  productId:", productData._id);
+    for (const [key, value] of formData.entries()) {
+      console.log(`  FormData: ${key} =`, value instanceof File ? `File(${value.name})` : (typeof value === 'string' && value.length > 100 ? value.substring(0, 100) + '...' : value));
+    }
+
     try {
-      await dispatch(updateProduct(formData));
+      console.log("dispatching updateProduct action...");
+      const res = await dispatch(updateProduct(formData));
+      console.log("✅ dispatch updateProduct successful:", res);
       setSuccess(true);
       setTimeout(() => {
+        console.log(" navigating to /admin/products...");
         navigate('/admin/products', { replace: true, state: { refreshProducts: true } });
       }, 1500);
     } catch (err) {
+      console.error("❌ Catch block error:", err);
       setError(true);
       setErrorMessage(err.response?.data?.error || err.message || "Failed to update product");
     } finally {
+      console.log("🔄 Finally block executing, setting loading to false...");
       setLoading(false);
     }
   };
@@ -397,13 +378,13 @@ const UpdateProductForm = () => {
     }
   }, [productData.thirdLavelCategory, customersProduct.product]);
 
-  const secondLevelOptions = productData.topLavelCategory
+  const secondLevelOptions = productData.topLavelCategory && categoryHierarchy[productData.topLavelCategory]
     ? Object.keys(categoryHierarchy[productData.topLavelCategory])
     : [];
 
   const thirdLevelOptions = productData.topLavelCategory &&
     productData.secondLavelCategory &&
-    categoryHierarchy[productData.topLavelCategory][productData.secondLavelCategory]
+    categoryHierarchy[productData.topLavelCategory]?.[productData.secondLavelCategory]
     ? categoryHierarchy[productData.topLavelCategory][productData.secondLavelCategory]
     : [];
 

@@ -36,10 +36,19 @@ async function deleteProduct(req, res) {
 async function updateProduct(req, res) {
   try {
     const productId = req.params.id;
+    console.log("📥 Update product request for:", productId);
+    console.log("📁 req.files:", JSON.stringify(req.files));
+    console.log("📋 req.body keys:", Object.keys(req.body));
+    console.log("🖼️ existingImages present:", !!req.body.existingImages);
+    
     const files = req.files?.images || []; // extract images array
+    console.log("📂 Files to upload:", files.length);
+    
     const product = await productService.updateProduct(productId, req.body, files);
+    console.log("✅ Product updated successfully:", productId);
     return res.json(product);
   } catch (err) {
+    console.error("❌ Update product error:", err.message);
     res.status(500).json({ error: err.message });
   }
 }
