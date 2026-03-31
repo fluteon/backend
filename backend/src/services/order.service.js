@@ -110,10 +110,11 @@ async function createOrder(user, shippAddress, usedSuperCoins = 0) {
   if (!dbUser) throw new Error("User not found");
 
   if (usedSuperCoins > 0) {
-    if (dbUser.superCoins < usedSuperCoins) {
+    const currentCoins = dbUser.fonCoins || 0;
+    if (currentCoins < usedSuperCoins) {
       throw new Error("Insufficient Super Coins");
     }
-    dbUser.superCoins -= usedSuperCoins;
+    dbUser.fonCoins = currentCoins - usedSuperCoins;
     await dbUser.save();
   }
 
@@ -325,9 +326,10 @@ async function approveReturnByAdmin(orderId, status, adminNote, rejectionMessage
 
       const user = await User.findById(order.user._id);
       if (user) {
-        user.superCoins = Math.max(0, user.superCoins - order.earnedSuperCoins);
+        const currentCoins = user.fonCoins || 0;
+        user.fonCoins = Math.max(0, currentCoins - order.earnedSuperCoins);
         await user.save();
-        console.log("✅ SuperCoins deducted. New balance:", user.superCoins);
+        console.log("✅ SuperCoins deducted. New balance:", user.fonCoins);
       }
     }
 
@@ -337,9 +339,9 @@ async function approveReturnByAdmin(orderId, status, adminNote, rejectionMessage
 
       const user = await User.findById(order.user._id);
       if (user) {
-        user.superCoins += order.usedSuperCoins;
+        user.fonCoins = (user.fonCoins || 0) + order.usedSuperCoins;
         await user.save();
-        console.log("✅ SuperCoins refunded. New balance:", user.superCoins);
+        console.log("✅ SuperCoins refunded. New balance:", user.fonCoins);
       }
     }
 
@@ -590,14 +592,14 @@ const rewardeSuperCoins = async (userId, orderId) => {
 
   const updatedUser = await User.findByIdAndUpdate(
     userId,
-    { $inc: { superCoins: coins } },
+    { $inc: { fonCoins: coins } },
     { new: true }
   );
 
   if (!updatedUser) {
     console.log("❌ User not found for reward");
   } else {
-    console.log("✅ Super coins added. New Balance:", updatedUser.superCoins);
+    console.log("✅ Super coins added. New Balance:", updatedUser.fonCoins);
   }
 
   order.earnedSuperCoins = coins;
@@ -607,7 +609,7 @@ const rewardeSuperCoins = async (userId, orderId) => {
 };
 const applySuperCoins = async (userId, coinCount, orderAmount) => {
   const user = await User.findById(userId);
-  if (coinCount > user.superCoins) throw new Error("Not enough coins");
+  if (coinCount > (user.fonCoins || 0)) throw new Error("Not enough coins");
 
   const discount = coinCount * 1; // ₹1 per coin
   const finalAmount = Math.max(orderAmount - discount, 0);

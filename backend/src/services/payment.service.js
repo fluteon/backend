@@ -90,8 +90,9 @@ const updatePaymentInformation = async (reqData) => {
 
         // Deduct super coins for registered users
         if (order.usedSuperCoins && order.usedSuperCoins > 0) {
-          if (user.superCoins < order.usedSuperCoins) throw new Error("Not enough Super Coins");
-          user.superCoins -= order.usedSuperCoins;
+          const currentCoins = user.fonCoins || 0;
+          if (currentCoins < order.usedSuperCoins) throw new Error("Not enough Super Coins");
+          user.fonCoins = currentCoins - order.usedSuperCoins;
           await user.save();
           console.log(`✅ Deducted ${order.usedSuperCoins} Super Coins from user ${user._id}`);
         }
@@ -211,8 +212,9 @@ const createCODOrder = async (orderId, usedSuperCoins = 0, couponDiscount = 0) =
       userId = user._id;
 
       if (usedSuperCoins > 0) {
-        if (user.superCoins < usedSuperCoins) throw new Error("Not enough Super Coins");
-        user.superCoins -= usedSuperCoins;
+        const currentCoins = user.fonCoins || 0;
+        if (currentCoins < usedSuperCoins) throw new Error("Not enough Super Coins");
+        user.fonCoins = currentCoins - usedSuperCoins;
         await user.save();
       }
 

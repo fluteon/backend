@@ -1,0 +1,4 @@
+BEFORE: 0
+AFTER UPDATE: 9
+RAW DB fonCoins: 9
+RAW DB superCoins: 35

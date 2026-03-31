@@ -23,7 +23,7 @@ const aiChatAssistant = async (req, res) => {
 
     // ✅ Super Coins
     if (message.includes("super coin")) {
-      return res.json({ reply: `💰 You have ${user.superCoins || 0} Super Coins available.` });
+      return res.json({ reply: `💰 You have ${user.fonCoins || 0} Fon Coins available.` });
     }
 
     // ✅ Price of product

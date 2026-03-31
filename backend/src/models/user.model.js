@@ -41,9 +41,9 @@ const userSchema = new mongoose.Schema({
       ref: "payment_information",
     },
   ],
-  superCoins:{
-    type:Number,
-    default:0
+  fonCoins: {
+    type: Number,
+    default: 0
   },
 
   ratings: [

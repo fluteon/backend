@@ -38,20 +38,20 @@ const getAllOrders = async (req, res) => {
 
 
 
-const confirmedOrder = (req, res) => {
+const confirmedOrder = async (req, res) => {
   try {
     const orderId = req.params.orderId;
-    const order = orderService.confirmedOrder(orderId);
+    const order = await orderService.confirmedOrder(orderId);
     res.status(202).json(order);
   } catch (error) {
     res.status(500).json({ error: "Something went wrong" });
   }
 };
 
-const shippOrder = (req, res) => {
+const shippOrder = async (req, res) => {
   try {
     const orderId = req.params.orderId;
-    const order = orderService.shipOrder(orderId);
+    const order = await orderService.shipOrder(orderId);
     return res.status(202).send(order);
   } catch (error) {
     return res.status(500).json({ error: "Something went wrong" });
@@ -67,30 +67,30 @@ const outForDelivery = async (req, res) => {
   }
 };
 
-const deliverOrder = (req, res) => {
+const deliverOrder = async (req, res) => {
   try {
     const orderId = req.params.orderId;
-    const order = orderService.deliveredOrder(orderId);
+    const order = await orderService.deliveredOrder(orderId);
     return res.status(202).send(order);
   } catch (error) {
     return res.status(500).json({ error: "Something went wrong" });
   }
 };
 
-const cancelledOrder = (req, res) => {
+const cancelledOrder = async (req, res) => {
   try {
     const orderId = req.params.orderId;
-    const order = orderService.cancelledOrder(orderId);
+    const order = await orderService.cancelledOrder(orderId);
     return res.status(202).send(order);
   } catch (error) {
     return res.status(500).json({ error: "Something went wrong" });
   }
 };
 
-const deleteOrder = (req, res) => {
+const deleteOrder = async (req, res) => {
   try {
     const orderId = req.params.orderId;
-    orderService.deleteOrder(orderId);
+    await orderService.deleteOrder(orderId);
     res
       .status(202)
       .json({ message: "Order Deleted Successfully", success: true });

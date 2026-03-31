@@ -1,0 +1,28 @@
+DB USER RAW:
+{
+  "_id": "69ba681518f2d56c4bdd9ce9",
+  "firstName": "Tappu",
+  "lastName": "Sena",
+  "password": "$2b$08$Bq4TuDq7C/Klm0g7I.8ehu2mFnaCOFO10CrB6r.R5G1Di2nrzQIkO",
+  "email": "aryesh.shivmare34@gmail.com",
+  "role": "CUSTOMER",
+  "mobile": "8779658365",
+  "addresses": [
+    "69cb8b9ccba5007be37f1cb9",
+    "69cb8baccba5007be37f1cdd"
+  ],
+  "paymentInformation": [
+    "69cb8bb3cba5007be37f1d4d",
+    "69cb8d6c0ae177acbf75822b"
+  ],
+  "ratings": [],
+  "reviews": [],
+  "createdAt": "2026-03-18T08:46:23.373Z",
+  "__v": 4,
+  "fonCoins": 0,
+  "superCoins": 35
+}
+RECENT ORDERS:
+Order 69cb8d680ae177acbf7581f2: status=DELIVERED, totalDiscPrice=995, earnedCoins=9
+Order 69cb8badcba5007be37f1cfc: status=DELIVERED, totalDiscPrice=2690, earnedCoins=26
+Order 69cb8b9dcba5007be37f1cd9: status=PENDING, totalDiscPrice=2690, earnedCoins=0
