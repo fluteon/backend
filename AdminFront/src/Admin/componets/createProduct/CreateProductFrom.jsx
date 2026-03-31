@@ -654,6 +654,7 @@ useEffect(() => {
       setPreviewImages(imageUrl);
     }
   }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [productToUpdate, categoryHierarchy]);
 
 

@@ -125,6 +125,7 @@ const UpdateProductForm = () => {
         setImageIds(product.imageUrl.map((url, idx) => `img-${url.substring(url.lastIndexOf('/') + 1)}-${idx}`));
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customersProduct.product, categoryHierarchy]);
 
   function findCategoryPath(value) {
