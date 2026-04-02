@@ -1,0 +1,29 @@
+async (userId, orderId) => {
+  console.log("🎯 rewardeSuperCoins called for", userId, "with order", orderId);
+
+  const order = await Order.findById(orderId);
+  if (!order || order.orderStatus !== "DELIVERED") {
+    console.log("❌ Order not delivered or not found");
+    throw new Error("Coins can only be rewarded after delivery");
+  }
+
+  const coins = Math.floor(order.totalDiscountedPrice);
+  console.log("🪙 Coins to be rewarded:", coins);
+
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    { $inc: { fonCoins: coins } },
+    { new: true }
+  );
+
+  if (!updatedUser) {
+    console.log("❌ User not found for reward");
+  } else {
+    console.log("✅ Super coins added. New Balance:", updatedUser.fonCoins);
+  }
+
+  order.earnedSuperCoins = coins;
+  await order.save();
+
+  return updatedUser;
+}

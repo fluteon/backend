@@ -1,0 +1,10 @@
+{
+  "orderId": "69ce28852b4c6204526c095d",
+  "status": "DELIVERED",
+  "totalPrice": 2895,
+  "totalDiscountedPrice": 2895,
+  "earnedCoins": 28,
+  "usedCoins": 0,
+  "couponDiscount": 0,
+  "createdAt": "2026-04-02T08:27:49.800Z"
+}

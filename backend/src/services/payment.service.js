@@ -16,7 +16,7 @@ const createPaymentLink = async (orderId, usedSuperCoins = 0, couponDiscount = 0
 
     // 🔢 Calculate final amount
     const basePrice = order.totalDiscountedPrice || 0;
-    const finalAmount = Math.max(basePrice - (usedSuperCoins * 1) - couponDiscount, 0);
+    const finalAmount = Math.max(basePrice - (usedSuperCoins / 100) - couponDiscount, 0);
 
     order.usedSuperCoins = usedSuperCoins;
     order.couponDiscount = couponDiscount;
@@ -190,7 +190,7 @@ const createCODOrder = async (orderId, usedSuperCoins = 0, couponDiscount = 0) =
     if (existingPayment) throw new Error("Payment already exists for this order");
 
     const basePrice = order.totalDiscountedPrice || 0;
-    const finalAmount = Math.max(basePrice - (usedSuperCoins * 1) - couponDiscount, 0);
+    const finalAmount = Math.max(basePrice - (usedSuperCoins / 100) - couponDiscount, 0);
 
     order.usedSuperCoins = usedSuperCoins;
     order.couponDiscount = couponDiscount;

@@ -1,0 +1,7 @@
+{
+  "orderId": "69ce22cebc269ca3547d6912",
+  "status": "DELIVERED",
+  "earnedCoins": 9,
+  "createdAt": "2026-04-02T08:03:26.782Z",
+  "statusUpdatedAt": "2026-04-02T08:04:37.574Z"
+}

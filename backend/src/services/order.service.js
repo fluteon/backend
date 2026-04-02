@@ -118,7 +118,7 @@ async function createOrder(user, shippAddress, usedSuperCoins = 0) {
     await dbUser.save();
   }
 
-  const discountFromCoins = usedSuperCoins * 1;
+  const discountFromCoins = usedSuperCoins / 100;
 
   // 🎟️ Coupon Handling
   const couponCode = cart?.couponCode || null;
@@ -587,7 +587,7 @@ const rewardeSuperCoins = async (userId, orderId) => {
     throw new Error("Coins can only be rewarded after delivery");
   }
 
-  const coins = Math.floor(order.totalDiscountedPrice / 100);
+  const coins = Math.floor(order.totalDiscountedPrice);
   console.log("🪙 Coins to be rewarded:", coins);
 
   const updatedUser = await User.findByIdAndUpdate(
@@ -611,7 +611,7 @@ const applySuperCoins = async (userId, coinCount, orderAmount) => {
   const user = await User.findById(userId);
   if (coinCount > (user.fonCoins || 0)) throw new Error("Not enough coins");
 
-  const discount = coinCount * 1; // ₹1 per coin
+  const discount = coinCount / 100; // ₹1 for every 100 coins
   const finalAmount = Math.max(orderAmount - discount, 0);
 
   return { finalAmount, discount };

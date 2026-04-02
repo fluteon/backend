@@ -1,0 +1,41 @@
+{
+  "paymentDetails": {
+    "paymentStatus": "COMPLETED",
+    "paymentId": "COD_69ce22cebc269ca3547d6912_1775117019809",
+    "paymentMethod": "COD",
+    "transactionId": "COD_69ce22cebc269ca3547d6912"
+  },
+  "_id": "69ce22cebc269ca3547d6912",
+  "user": "6981b36ff964c34ed6426ac4",
+  "isGuestOrder": false,
+  "orderItems": [
+    "69ce22cebc269ca3547d690f"
+  ],
+  "orderDate": "2026-04-02T08:03:26.782Z",
+  "shippingAddress": {
+    "firstName": "Jethalal",
+    "lastName": "Mehta",
+    "streetAddress": "Bhandup, Mumbai",
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "zipCode": "400082",
+    "mobile": "8779658365",
+    "_id": "69ce22cebc269ca3547d68fd",
+    "user": "6981b36ff964c34ed6426ac4",
+    "__v": 0
+  },
+  "totalPrice": 995,
+  "totalDiscountedPrice": 995,
+  "discounte": 0,
+  "orderStatus": "DELIVERED",
+  "totalItem": 1,
+  "returnImages": [],
+  "rejectionMessage": "",
+  "usedSuperCoins": 0,
+  "earnedSuperCoins": 9,
+  "couponCode": null,
+  "couponDiscount": 0,
+  "createdAt": "2026-04-02T08:03:26.782Z",
+  "statusUpdatedAt": "2026-04-02T08:04:37.574Z",
+  "__v": 0
+}
