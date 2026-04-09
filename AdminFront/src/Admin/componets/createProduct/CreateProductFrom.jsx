@@ -830,10 +830,14 @@ const handleSubmit = async (e) => {
   // Add actual image File objects (only if new images were selected)
   if (images.length > 0) {
     images.forEach((image, index) => {
-      console.log(`Adding image ${index + 1}:`, image.name, image.size, "bytes");
-      formData.append("images", image);
+      if (image && image.name) {
+        console.log(`Adding image ${index + 1}:`, image.name, image.size, "bytes");
+        formData.append("images", image);
+      } else {
+        console.warn(`⚠️ Skipped invalid image entry at index ${index}:`, image);
+      }
     });
-    console.log("✅ FormData ready with", images.length, "new images");
+    console.log("✅ FormData ready with new images");
   } else if (isEditing) {
     // When editing without new images, send existing image URLs to preserve them
     console.log("✅ No new images - keeping existing images:", previewImages.length);
