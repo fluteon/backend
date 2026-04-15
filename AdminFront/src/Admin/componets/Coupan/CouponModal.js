@@ -7,24 +7,33 @@ import {
   MenuItem,
   IconButton,
   Box,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import { useDispatch, useSelector } from "react-redux";
-import { createdCoupon, updateCoupon } from "../../../Redux/Admin/Coupon/Action";
+import {
+  createdCoupon,
+  updateCoupon,
+} from "../../../Redux/Admin/Coupon/Action";
 import { motion } from "framer-motion";
 
 const CouponModal = ({ onClose, couponData }) => {
   const dispatch = useDispatch();
   const isEditMode = !!couponData;
-  const { loading, success, error, message } = useSelector((store) => store.createCoupon);
+  const { loading, success, error, message } = useSelector(
+    (store) => store.createCoupon,
+  );
 
   const [formData, setFormData] = useState({
     code: "",
     discountType: "flat",
     discountValue: "",
+    maxDiscountAmount: "",
     minOrderAmount: "",
     usageLimit: "",
     isActive: true,
+    isHidden: false,
     expiresAt: "",
   });
 
@@ -111,7 +120,9 @@ const CouponModal = ({ onClose, couponData }) => {
 
         <form onSubmit={handleSubmit}>
           {success && hasSubmitted && (
-            <Alert severity="success">{message || "Coupon created successfully!"}</Alert>
+            <Alert severity="success">
+              {message || "Coupon created successfully!"}
+            </Alert>
           )}
           {error && <Alert severity="error">{error}</Alert>}
 
@@ -137,6 +148,8 @@ const CouponModal = ({ onClose, couponData }) => {
           >
             <MenuItem value="flat">Flat</MenuItem>
             <MenuItem value="percentage">Percentage</MenuItem>
+            <MenuItem value="free_shipping">Free Shipping</MenuItem>
+            <MenuItem value="bogo">Buy One Get One (BOGO)</MenuItem>
           </TextField>
 
           <TextField
@@ -145,10 +158,24 @@ const CouponModal = ({ onClose, couponData }) => {
             name="discountValue"
             type="number"
             fullWidth
-            required
+            required={formData.discountType !== "free_shipping"}
+            disabled={formData.discountType === "free_shipping"}
             value={formData.discountValue}
             onChange={handleChange}
           />
+
+          {formData.discountType === "percentage" && (
+            <TextField
+              sx={{ mt: 3 }}
+              label="Max Discount Amount (Optional)"
+              name="maxDiscountAmount"
+              type="number"
+              fullWidth
+              value={formData.maxDiscountAmount || ""}
+              onChange={handleChange}
+              helperText="Maximum discount rupees allowed for this percentage coupon."
+            />
+          )}
 
           <TextField
             sx={{ mt: 3 }}
@@ -184,6 +211,19 @@ const CouponModal = ({ onClose, couponData }) => {
             onChange={handleChange}
           />
 
+          <FormControlLabel
+            sx={{ mt: 3, display: "block" }}
+            control={
+              <Switch
+                checked={formData.isHidden}
+                onChange={handleChange}
+                name="isHidden"
+                color="primary"
+              />
+            }
+            label="Hidden (Do not display to users)"
+          />
+
           <Button
             sx={{ mt: 3 }}
             variant="contained"
@@ -191,7 +231,11 @@ const CouponModal = ({ onClose, couponData }) => {
             fullWidth
             disabled={loading}
           >
-            {loading ? "Submitting..." : isEditMode ? "Update Coupon" : "Create Coupon"}
+            {loading
+              ? "Submitting..."
+              : isEditMode
+                ? "Update Coupon"
+                : "Create Coupon"}
           </Button>
         </form>
       </Box>

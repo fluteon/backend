@@ -8,6 +8,8 @@ const CartItem = require("../models/cartItem.model.js");
 const mongoose = require("mongoose");
 const { sendOrderConfirmationEmail } = require("../config/mailer.js");
 const { notifyOwnerNewOrder } = require("../services/ownerNotification.service.js");
+const Coupon = require("../models/coupon.model.js");
+const CouponUsage = require("../models/coupon.usage.model.js");
 
 // async function createOrder(user, shippAddress, usedSuperCoins = 0) {
 //   let address;
@@ -124,6 +126,17 @@ async function createOrder(user, shippAddress, usedSuperCoins = 0) {
   const couponCode = cart?.couponCode || null;
   const couponDiscount = cart?.couponDiscount || 0;
 
+  // Check coupon limit before placing order
+  if (couponCode) {
+    const couponObj = await Coupon.findOne({ code: couponCode, isActive: true });
+    if (!couponObj) {
+        throw new Error("Coupon is no longer valid or active.");
+    }
+    if (couponObj.usageLimit && (couponObj.usedBy?.length || 0) >= couponObj.usageLimit) {
+        throw new Error("Coupon usage limit reached during checkout.");
+    }
+  }
+
   // 💰 Final price after all discounts
   const finalPriceAfterCoinsAndCoupon = Math.max(
     cart.totalDiscountedPrice - discountFromCoins - couponDiscount,
@@ -153,7 +166,25 @@ async function createOrder(user, shippAddress, usedSuperCoins = 0) {
   cart.couponDiscount = 0;
   await cart.save();
 
-  return await createdOrder.save();
+  const savedOrder = await createdOrder.save();
+
+  if (couponCode) {
+    const couponObj = await Coupon.findOne({ code: couponCode });
+    if (couponObj) {
+      couponObj.usedBy.push(user._id);
+      await couponObj.save();
+
+      const usage = new CouponUsage({
+        code: couponObj.code,
+        user: user._id,
+        order: savedOrder._id,
+        discountAmount: couponDiscount,
+      });
+      await usage.save();
+    }
+  }
+
+  return savedOrder;
 }
 
 

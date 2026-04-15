@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Button,
   Table,
@@ -9,16 +9,16 @@ import {
   Typography,
   CircularProgress,
   IconButton,
-} from '@mui/material';
+} from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from '@mui/icons-material/Delete';
-import { useDispatch, useSelector } from 'react-redux';
-import CouponModal from './CouponModal';
+import DeleteIcon from "@mui/icons-material/Delete";
+import { useDispatch, useSelector } from "react-redux";
+import CouponModal from "./CouponModal";
 import {
   getAllCoupons,
   deleteCoupon,
-} from '../../../Redux/Admin/Coupon/Action';
-import { CREATE_COUPON_SUCCESS } from '../../../Redux/Admin/Coupon/ActionType';
+} from "../../../Redux/Admin/Coupon/Action";
+import { CREATE_COUPON_SUCCESS } from "../../../Redux/Admin/Coupon/ActionType";
 
 function Coupan() {
   const [openModal, setOpenModal] = useState(false);
@@ -26,7 +26,11 @@ function Coupan() {
   const [editingCoupon, setEditingCoupon] = useState(null);
 
   const dispatch = useDispatch();
-  const { loading, coupons = [], error } = useSelector((state) => state.createCoupon || {});
+  const {
+    loading,
+    coupons = [],
+    error,
+  } = useSelector((state) => state.createCoupon || {});
 
   useEffect(() => {
     dispatch(getAllCoupons());
@@ -57,11 +61,11 @@ function Coupan() {
       <Button
         variant="outlined"
         sx={{
-          color: 'white',
-          borderColor: 'white',
-          '&:hover': {
-            backgroundColor: 'white',
-            color: 'black',
+          color: "white",
+          borderColor: "white",
+          "&:hover": {
+            backgroundColor: "white",
+            color: "black",
           },
         }}
         onClick={() => {
@@ -89,7 +93,7 @@ function Coupan() {
       ) : error ? (
         <Typography color="error">{error}</Typography>
       ) : (
-        <Table sx={{ border: '1px solid #ccc' }}>
+        <Table sx={{ border: "1px solid #ccc" }}>
           <TableHead>
             <TableRow>
               <TableCell>Code</TableCell>
@@ -109,21 +113,34 @@ function Coupan() {
                 <TableCell>{coupon.code}</TableCell>
                 <TableCell>{coupon.discountType}</TableCell>
                 <TableCell>
-                  {coupon.discountType === 'flat'
+                  {coupon.discountType === "flat"
                     ? `₹${coupon.discountValue}`
-                    : `${coupon.discountValue}%`}
+                    : coupon.discountType === "percentage"
+                      ? `${coupon.discountValue}%`
+                      : coupon.discountType === "free_shipping"
+                        ? "Free Shipping"
+                        : coupon.discountType === "bogo"
+                          ? `Buy 1 Get ${coupon.discountValue || 1}`
+                          : coupon.discountValue}
                 </TableCell>
                 <TableCell>₹{coupon.minOrderAmount}</TableCell>
                 <TableCell>{coupon.usageLimit}</TableCell>
                 <TableCell>{coupon.usedBy?.length || 0}</TableCell>
-                <TableCell>{coupon.isActive ? 'Active' : 'Inactive'}</TableCell>
+                <TableCell>
+                  {coupon.isActive ? "Active" : "Inactive"}
+                  {coupon.isHidden ? " (Hidden)" : ""}
+                </TableCell>
                 <TableCell>
                   {coupon.expiresAt
                     ? new Date(coupon.expiresAt).toLocaleDateString()
-                    : 'N/A'}
+                    : "N/A"}
                 </TableCell>
                 <TableCell>
-                  <IconButton onClick={() => handleEdit(coupon)} color="primary" sx={{ mr: 1 }}>
+                  <IconButton
+                    onClick={() => handleEdit(coupon)}
+                    color="primary"
+                    sx={{ mr: 1 }}
+                  >
                     <EditIcon />
                   </IconButton>
                   <IconButton

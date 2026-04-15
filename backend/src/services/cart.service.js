@@ -78,8 +78,25 @@ async function addCartItem(userId, req) {
 
 // Updated applyCoupon() without orderId dependency
 const applyCoupon = async (code, userId, cartId, cartTotal) => {
+  if (!userId) {
+    throw new Error("You must be logged in to apply a coupon.");
+  }
+
   const coupon = await Coupon.findOne({ code, isActive: true });
   if (!coupon) throw new Error("Invalid or expired coupon");
+
+  const currentDate = new Date();
+  if (coupon.expiresAt && coupon.expiresAt < currentDate) {
+    throw new Error("Coupon has expired");
+  }
+
+  if (coupon.usageLimit && (coupon.usedBy?.length || 0) >= coupon.usageLimit) {
+    throw new Error("Coupon usage limit reached");
+  }
+
+  if (coupon.usedBy?.includes(userId)) {
+    throw new Error("You have already used this coupon");
+  }
 
   if (coupon.minOrderAmount && cartTotal < coupon.minOrderAmount) {
     throw new Error(`Minimum order amount of ₹${coupon.minOrderAmount} required`);
@@ -116,7 +133,7 @@ const applyCoupon = async (code, userId, cartId, cartTotal) => {
 };
 
 const allCoupon = async () => {
-  return await Coupon.find().sort({ createdAt: -1 });
+  return await Coupon.find({ isHidden: { $ne: true } }).sort({ createdAt: -1 });
 };
 
 module.exports = { createCart, findUserCart, addCartItem,applyCoupon, allCoupon  };
