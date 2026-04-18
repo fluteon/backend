@@ -38,6 +38,14 @@ imageUrl: {
   type: [String],
   validate: [arr => arr.length <= 10, 'Maximum 10 images allowed'],
 },
+sizeChartUrl: {
+  type: String,
+  default: null,
+},
+colorSwatchUrl: {
+  type: String,
+  default: null,
+},
 
   ratings: [
     {

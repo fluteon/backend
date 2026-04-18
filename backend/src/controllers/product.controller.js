@@ -42,9 +42,13 @@ async function updateProduct(req, res) {
     console.log("🖼️ existingImages present:", !!req.body.existingImages);
     
     const files = req.files?.images || []; // extract images array
+    const sizeChartFiles = req.files?.sizeChart || []; // extract size chart file
+    const colorSwatchFiles = req.files?.colorSwatch || []; // extract color swatch file
     console.log("📂 Files to upload:", files.length);
+    console.log("🖼️ Size chart files:", sizeChartFiles.length);
+    console.log("🎨 Color swatch files:", colorSwatchFiles.length);
     
-    const product = await productService.updateProduct(productId, req.body, files);
+    const product = await productService.updateProduct(productId, req.body, files, sizeChartFiles, colorSwatchFiles);
     console.log("✅ Product updated successfully:", productId);
     return res.json(product);
   } catch (err) {
@@ -143,6 +147,18 @@ const getComplementaryProducts = async (req, res) => {
 };
 
 
+// Get color variants (same title + brand, different products/colors)
+const getColorVariants = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const variants = await productService.getColorVariants(productId);
+    res.status(200).json(variants);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+
 module.exports = {
   createProduct,
   deleteProduct,
@@ -153,6 +169,6 @@ module.exports = {
   searchProduct,
   createMultipleProduct,
   getSimilarProducts,
-  getComplementaryProducts
-
+  getComplementaryProducts,
+  getColorVariants
 };

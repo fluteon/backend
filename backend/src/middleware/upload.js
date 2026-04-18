@@ -17,7 +17,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   limits: { 
-    files: 10, // Max 10 images
+    files: 12, // 10 product images + 1 size chart + 1 color swatch
     fileSize: 10 * 1024 * 1024 // 10MB per file
   },
   fileFilter: fileFilter

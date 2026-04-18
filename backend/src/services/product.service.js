@@ -13,20 +13,23 @@ async function createProduct(req) {
     if (typeof sizes === "string") sizes = JSON.parse(sizes);
     console.log("Parsed sizes:", sizes);
 
-    // Debug: Check what we received
-    console.log("req.files:", req.files);
-    console.log("req.files type:", typeof req.files);
-    console.log("req.files length:", req.files ? req.files.length : 'N/A');
-    console.log("req.file:", req.file);
+    // With upload.fields(), req.files is an object: { images: [...], sizeChart: [...], colorSwatch: [...] }
+    const imageFiles = req.files?.images || [];
+    const sizeChartFiles = req.files?.sizeChart || [];
+    const colorSwatchFiles = req.files?.colorSwatch || [];
 
-    // Upload images to Cloudinary
-    if (!req.files || req.files.length === 0) {
+    console.log("Image files received:", imageFiles.length);
+    console.log("Size chart files received:", sizeChartFiles.length);
+    console.log("Color swatch files received:", colorSwatchFiles.length);
+
+    // Upload product images to Cloudinary
+    if (imageFiles.length === 0) {
       throw new Error("No images uploaded. Please select at least one image.");
     }
-    console.log(`Uploading ${req.files.length} images to Cloudinary...`);
+    console.log(`Uploading ${imageFiles.length} images to Cloudinary...`);
 
     const uploadResults = await Promise.all(
-      req.files.map(file => {
+      imageFiles.map(file => {
         const base64Image = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
         return cloudinary.uploader.upload(base64Image, {
           folder: "ecommerce/products",
@@ -63,6 +66,30 @@ async function createProduct(req) {
     }).save();
     console.log("Third level category:", thirdLevel.name);
 
+    // Handle optional size chart image upload
+    let sizeChartUrl = null;
+    if (sizeChartFiles.length > 0) {
+      const sizeChartFile = sizeChartFiles[0];
+      const base64SizeChart = `data:${sizeChartFile.mimetype};base64,${sizeChartFile.buffer.toString("base64")}`;
+      const sizeChartUpload = await cloudinary.uploader.upload(base64SizeChart, {
+        folder: "ecommerce/sizecharts",
+      });
+      sizeChartUrl = sizeChartUpload.secure_url;
+      console.log("✅ Size chart uploaded:", sizeChartUrl);
+    }
+
+    // Handle optional color swatch image upload
+    let colorSwatchUrl = null;
+    if (colorSwatchFiles.length > 0) {
+      const colorSwatchFile = colorSwatchFiles[0];
+      const base64Swatch = `data:${colorSwatchFile.mimetype};base64,${colorSwatchFile.buffer.toString("base64")}`;
+      const swatchUpload = await cloudinary.uploader.upload(base64Swatch, {
+        folder: "ecommerce/swatches",
+      });
+      colorSwatchUrl = swatchUpload.secure_url;
+      console.log("✅ Color swatch uploaded:", colorSwatchUrl);
+    }
+
     // Create and save product
     console.log("Creating product document...");
     const product = new Product({
@@ -77,6 +104,8 @@ async function createProduct(req) {
       quantity: reqData.quantity,
       color: reqData.color,
       category: thirdLevel._id,
+      sizeChartUrl: sizeChartUrl,
+      colorSwatchUrl: colorSwatchUrl,
     });
 
     console.log("Saving product to database...");
@@ -105,7 +134,7 @@ async function deleteProduct(productId) {
   return "Product deleted Successfully";
 }
 
-async function updateProduct(productId, reqData, files = []) {
+async function updateProduct(productId, reqData, files = [], sizeChartFiles = [], colorSwatchFiles = []) {
   try {
     const product = await Product.findById(productId);
     if (!product) throw new Error("Product not found");
@@ -201,6 +230,32 @@ async function updateProduct(productId, reqData, files = []) {
       console.log("⚠️ Category data incomplete, keeping original category");
     }
 
+    // ✅ Handle size chart image
+    let sizeChartUrl = product.sizeChartUrl ?? null;
+    if (sizeChartFiles.length > 0) {
+      const sizeChartFile = sizeChartFiles[0];
+      const base64SizeChart = `data:${sizeChartFile.mimetype};base64,${sizeChartFile.buffer.toString("base64")}`;
+      const sizeChartUpload = await cloudinary.uploader.upload(base64SizeChart, { folder: "ecommerce/sizecharts" });
+      sizeChartUrl = sizeChartUpload.secure_url;
+      console.log("✅ Size chart image updated:", sizeChartUrl);
+    } else if (reqData.removeSizeChart === "true") {
+      sizeChartUrl = null;
+      console.log("🗑️ Size chart removed");
+    }
+
+    // ✅ Handle color swatch image
+    let colorSwatchUrl = product.colorSwatchUrl ?? null;
+    if (colorSwatchFiles.length > 0) {
+      const colorSwatchFile = colorSwatchFiles[0];
+      const base64Swatch = `data:${colorSwatchFile.mimetype};base64,${colorSwatchFile.buffer.toString("base64")}`;
+      const swatchUpload = await cloudinary.uploader.upload(base64Swatch, { folder: "ecommerce/swatches" });
+      colorSwatchUrl = swatchUpload.secure_url;
+      console.log("✅ Color swatch updated:", colorSwatchUrl);
+    } else if (reqData.removeColorSwatch === "true") {
+      colorSwatchUrl = null;
+      console.log("🗑️ Color swatch removed");
+    }
+
     // ✅ Update product fields using findByIdAndUpdate to avoid Mongoose subdocument hang
     const updateFields = {
       title: reqData.title?.trim(),
@@ -219,6 +274,8 @@ async function updateProduct(productId, reqData, files = []) {
       sizes,
       imageUrl: imageUrls,
       category: categoryId,
+      sizeChartUrl: sizeChartUrl,
+      colorSwatchUrl: colorSwatchUrl,
     };
 
     console.log("💾 Saving product update...");
@@ -627,6 +684,65 @@ async function getComplementaryProducts(categoryNames, limit = 6) {
   }
 }
 
+// Get color variants: flexible 3-stage matching to handle duplicate category docs
+async function getColorVariants(productId) {
+  try {
+    const product = await Product.findById(productId)
+      .populate('category')
+      .select('brand category color imageUrl title');
+    if (!product) throw new Error('Product not found');
+
+    const brand = product.brand;
+
+    const toVariant = (v) => ({
+      _id: v._id,
+      color: Array.isArray(v.color) ? v.color[0] : v.color,
+      thumbnail: v.imageUrl?.[0] || null,
+      colorSwatchUrl: v.colorSwatchUrl || null,
+      title: v.title,
+    });
+
+    // ── Stage 1: exact same category ObjectId + brand ──────────────────────
+    let variants = await Product.find({
+      brand: { $regex: new RegExp(`^${brand}$`, 'i') },
+      category: product.category?._id || product.category,
+      _id: { $ne: productId },
+    }).select('_id color imageUrl title colorSwatchUrl').lean();
+
+    if (variants.length > 0) return variants.map(toVariant);
+
+    // ── Stage 2: same category NAME (handles duplicate category docs) ───────
+    const categoryName = product.category?.name;
+    if (categoryName) {
+      // Find all category documents with the same name
+      const allMatchingCats = await Category.find({
+        name: { $regex: new RegExp(`^${categoryName}$`, 'i') },
+      }).select('_id').lean();
+
+      const catIds = allMatchingCats.map(c => c._id);
+
+      variants = await Product.find({
+        brand: { $regex: new RegExp(`^${brand}$`, 'i') },
+        category: { $in: catIds },
+        _id: { $ne: productId },
+      }).select('_id color imageUrl title colorSwatchUrl').lean();
+
+      if (variants.length > 0) return variants.map(toVariant);
+    }
+
+    // ── Stage 3: same brand only (broadest match) ───────────────────────────
+    variants = await Product.find({
+      brand: { $regex: new RegExp(`^${brand}$`, 'i') },
+      _id: { $ne: productId },
+    }).select('_id color imageUrl title colorSwatchUrl').limit(10).lean();
+
+    return variants.map(toVariant);
+
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
 module.exports = {
   createProduct,
   deleteProduct,
@@ -636,5 +752,6 @@ module.exports = {
   createMultipleProduct,
   searchProducts,
   getSimilarProducts,
-  getComplementaryProducts
+  getComplementaryProducts,
+  getColorVariants
 };

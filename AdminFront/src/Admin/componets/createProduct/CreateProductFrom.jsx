@@ -576,6 +576,12 @@ const productToUpdate = location.state?.product;
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sizeChartFile, setSizeChartFile] = useState(null);
+  const [sizeChartPreview, setSizeChartPreview] = useState(null);
+  const [removeSizeChart, setRemoveSizeChart] = useState(false);
+  const [colorSwatchFile, setColorSwatchFile] = useState(null);
+  const [colorSwatchPreview, setColorSwatchPreview] = useState(null);
+  const [removeColorSwatch, setRemoveColorSwatch] = useState(false);
 
   const [productData, setProductData] = useState({
     images: "",
@@ -617,7 +623,7 @@ function findCategoryPath(value) {
 }
  const isEditing = !!productData._id;
  console.log("is editing", isEditing)
-useEffect(() => {
+  useEffect(() => {
   if (productToUpdate) {
     const {
       brand,
@@ -630,13 +636,14 @@ useEffect(() => {
       description,
       sizes,
       imageUrl,
+      sizeChartUrl,
     } = productToUpdate;
 
     const categoryPath = findCategoryPath(productToUpdate.thirdLavelCategory || "formal_pants");
 
  setProductData((prev) => ({
   ...prev,
-  _id: productToUpdate._id, // ✅ THIS IS CRUCIAL
+  _id: productToUpdate._id,
   brand,
   title,
   color: Array.isArray(color) ? color[0] : color,
@@ -652,6 +659,12 @@ useEffect(() => {
 
     if (imageUrl?.length > 0) {
       setPreviewImages(imageUrl);
+    }
+    if (sizeChartUrl) {
+      setSizeChartPreview(sizeChartUrl);
+    }
+    if (productToUpdate.colorSwatchUrl) {
+      setColorSwatchPreview(productToUpdate.colorSwatchUrl);
     }
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -844,6 +857,20 @@ const handleSubmit = async (e) => {
     formData.append("existingImages", JSON.stringify(previewImages));
   }
 
+  // Handle size chart
+  if (sizeChartFile) {
+    formData.append("sizeChart", sizeChartFile);
+  } else if (isEditing && removeSizeChart) {
+    formData.append("removeSizeChart", "true");
+  }
+
+  // Handle color swatch
+  if (colorSwatchFile) {
+    formData.append("colorSwatch", colorSwatchFile);
+  } else if (isEditing && removeColorSwatch) {
+    formData.append("removeColorSwatch", "true");
+  }
+
   if (isEditing) {
     formData.append("productId", productData._id);
 
@@ -881,6 +908,9 @@ const handleSubmit = async (e) => {
         });
         setImages([]);
         setPreviewImages([]);
+        setSizeChartFile(null);
+        setSizeChartPreview(null);
+        setRemoveSizeChart(false);
         setSizeChart(null);
         setSuccess(true);
         setLoading(false);
@@ -1339,6 +1369,180 @@ useEffect(() => {
     />
   </Grid>
 )}
+
+          {/* Size Chart Image Upload (Optional) */}
+          <Grid item xs={12}>
+            <Box
+              sx={{
+                border: '1px dashed #ccc',
+                borderRadius: 2,
+                p: 2,
+                mt: 1,
+                backgroundColor: '#fafafa',
+              }}
+            >
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                Size Chart Image{' '}
+                <Typography component="span" variant="body2" color="text.secondary">
+                  (Optional)
+                </Typography>
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                Upload a size chart image (JPG, PNG, WebP). This will be shown to customers on the product page.
+              </Typography>
+
+              <input
+                type="file"
+                accept="image/*"
+                id="sizeChartInput"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setSizeChartFile(file);
+                    setSizeChartPreview(URL.createObjectURL(file));
+                    setRemoveSizeChart(false);
+                  }
+                }}
+              />
+
+              {sizeChartPreview && !removeSizeChart ? (
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mt: 1 }}>
+                  <img
+                    src={sizeChartPreview}
+                    alt="Size Chart Preview"
+                    style={{
+                      maxWidth: 220,
+                      maxHeight: 160,
+                      objectFit: 'contain',
+                      border: '1px solid #ddd',
+                      borderRadius: 4,
+                    }}
+                  />
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      size="small"
+                      onClick={() => document.getElementById('sizeChartInput').click()}
+                    >
+                      Replace Image
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      onClick={() => {
+                        setSizeChartFile(null);
+                        setSizeChartPreview(null);
+                        setRemoveSizeChart(true);
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </Box>
+                </Box>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outlined"
+                  size="small"
+                  onClick={() => document.getElementById('sizeChartInput').click()}
+                  sx={{ mt: 0.5 }}
+                >
+                  + Upload Size Chart Image
+                </Button>
+              )}
+            </Box>
+          </Grid>
+
+          {/* Color Swatch Image Upload (Optional) */}
+          <Grid item xs={12}>
+            <Box
+              sx={{
+                border: '1px dashed #ccc',
+                borderRadius: 2,
+                p: 2,
+                mt: 1,
+                backgroundColor: '#fafafa',
+              }}
+            >
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                Color Swatch Image{' '}
+                <Typography component="span" variant="body2" color="text.secondary">
+                  (Optional)
+                </Typography>
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                Upload a small image showing the fabric/color swatch for this product. Displayed as a circle on the product page for color selection.
+              </Typography>
+
+              <input
+                type="file"
+                accept="image/*"
+                id="colorSwatchInput"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setColorSwatchFile(file);
+                    setColorSwatchPreview(URL.createObjectURL(file));
+                    setRemoveColorSwatch(false);
+                  }
+                }}
+              />
+
+              {colorSwatchPreview && !removeColorSwatch ? (
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mt: 1 }}>
+                  <img
+                    src={colorSwatchPreview}
+                    alt="Color Swatch Preview"
+                    style={{
+                      width: 80,
+                      height: 80,
+                      objectFit: 'cover',
+                      borderRadius: '50%',
+                      border: '2px solid #ddd',
+                    }}
+                  />
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      size="small"
+                      onClick={() => document.getElementById('colorSwatchInput').click()}
+                    >
+                      Replace Swatch
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      onClick={() => {
+                        setColorSwatchFile(null);
+                        setColorSwatchPreview(null);
+                        setRemoveColorSwatch(true);
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </Box>
+                </Box>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outlined"
+                  size="small"
+                  onClick={() => document.getElementById('colorSwatchInput').click()}
+                  sx={{ mt: 0.5 }}
+                >
+                  + Upload Color Swatch Image
+                </Button>
+              )}
+            </Box>
+          </Grid>
 
           {sizeChart && (
             <Box mt={2}>

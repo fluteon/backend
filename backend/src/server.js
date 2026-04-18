@@ -1,3 +1,4 @@
+// updated: colorSwatch multer field added
 const { app } = require(".");
 const { connectDb } = require("./config/db");
 

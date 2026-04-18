@@ -53,6 +53,9 @@ const UpdateProductForm = () => {
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sizeChartFile, setSizeChartFile] = useState(null);
+  const [sizeChartPreview, setSizeChartPreview] = useState(null);
+  const [removeSizeChart, setRemoveSizeChart] = useState(false);
 
   const [productData, setProductData] = useState({
     images: "",
@@ -123,6 +126,10 @@ const UpdateProductForm = () => {
         setPreviewImages(product.imageUrl);
         // Generate stable IDs for existing images based on URL
         setImageIds(product.imageUrl.map((url, idx) => `img-${url.substring(url.lastIndexOf('/') + 1)}-${idx}`));
+      }
+      // Pre-populate size chart preview if product has one
+      if (product.sizeChartUrl) {
+        setSizeChartPreview(product.sizeChartUrl);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -311,6 +318,13 @@ const UpdateProductForm = () => {
     } else {
       // This covers both: no changes AND drag-reorder of existing images
       formData.append("existingImages", JSON.stringify(previewImages));
+    }
+
+    // Handle size chart image
+    if (sizeChartFile) {
+      formData.append("sizeChart", sizeChartFile);
+    } else if (removeSizeChart) {
+      formData.append("removeSizeChart", "true");
     }
 
     formData.append("productId", productData._id);
@@ -808,6 +822,93 @@ const UpdateProductForm = () => {
               />
             </Grid>
           )}
+
+          {/* Size Chart Image Upload (Optional) */}
+          <Grid item xs={12}>
+            <Box
+              sx={{
+                border: '1px dashed #ccc',
+                borderRadius: 2,
+                p: 2,
+                mt: 1,
+                backgroundColor: '#fafafa',
+              }}
+            >
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                Size Chart Image{' '}
+                <Typography component="span" variant="body2" color="text.secondary">
+                  (Optional)
+                </Typography>
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                Upload a size chart image (JPG, PNG, WebP). This will be shown to customers on the product page.
+              </Typography>
+
+              <input
+                type="file"
+                accept="image/*"
+                id="sizeChartInputUpdate"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setSizeChartFile(file);
+                    setSizeChartPreview(URL.createObjectURL(file));
+                    setRemoveSizeChart(false);
+                  }
+                }}
+              />
+
+              {sizeChartPreview && !removeSizeChart ? (
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mt: 1 }}>
+                  <img
+                    src={sizeChartPreview}
+                    alt="Size Chart Preview"
+                    style={{
+                      maxWidth: 220,
+                      maxHeight: 160,
+                      objectFit: 'contain',
+                      border: '1px solid #ddd',
+                      borderRadius: 4,
+                    }}
+                  />
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      size="small"
+                      onClick={() => document.getElementById('sizeChartInputUpdate').click()}
+                    >
+                      Replace Image
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      onClick={() => {
+                        setSizeChartFile(null);
+                        setSizeChartPreview(null);
+                        setRemoveSizeChart(true);
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </Box>
+                </Box>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outlined"
+                  size="small"
+                  onClick={() => document.getElementById('sizeChartInputUpdate').click()}
+                  sx={{ mt: 0.5 }}
+                >
+                  + Upload Size Chart Image
+                </Button>
+              )}
+            </Box>
+          </Grid>
 
           {sizeChart && (
             <Box mt={2}>
