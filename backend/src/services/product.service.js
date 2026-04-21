@@ -169,33 +169,58 @@ async function updateProduct(productId, reqData, files = [], sizeChartFiles = []
       throw new Error("Size data is required");
     }
 
-    // ✅ Handle images
-    let imageUrls = product.imageUrl;
-    
-    // If new files are uploaded, use them
-    if (files.length > 0) {
+    // ✅ Handle images via imageOrder manifest (supports mix of existing + new)
+    let imageUrls = product.imageUrl; // default: keep existing
+
+    if (reqData.imageOrder) {
+      // imageOrder = JSON array of strings: Cloudinary URL or '__NEW__N' placeholder
+      const imageOrder = JSON.parse(reqData.imageOrder);
+
+      // Upload any new files first
+      let newFileUrls = [];
+      if (files.length > 0) {
+        const uploadResults = await Promise.all(
+          files.map((file) => {
+            const base64 = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+            return cloudinary.uploader.upload(base64, { folder: "ecommerce/products" });
+          })
+        );
+        newFileUrls = uploadResults.map((r) => r.secure_url);
+        console.log("✅ Uploaded new images:", newFileUrls.length);
+      }
+
+      // Resolve final ordered image list
+      imageUrls = imageOrder.map((slot) => {
+        if (typeof slot === "string" && slot.startsWith("__NEW__")) {
+          const idx = parseInt(slot.replace("__NEW__", ""), 10);
+          return newFileUrls[idx] || null;
+        }
+        return slot; // existing Cloudinary URL
+      }).filter(Boolean);
+
+      console.log("✅ Final image URLs (merged):", imageUrls.length);
+
+    } else if (files.length > 0) {
+      // Legacy fallback: only new files sent (replaces all - kept for compat)
       const uploadResults = await Promise.all(
         files.map((file) => {
-          const base64Image = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
-          return cloudinary.uploader.upload(base64Image, {
-            folder: "ecommerce/products",
-          });
+          const base64 = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+          return cloudinary.uploader.upload(base64, { folder: "ecommerce/products" });
         })
       );
-      imageUrls = uploadResults.map((res) => res.secure_url);
-    } 
-    // If existingImages is provided (when editing without new uploads), use those
-    else if (reqData.existingImages) {
+      imageUrls = uploadResults.map((r) => r.secure_url);
+    } else if (reqData.existingImages) {
+      // Legacy fallback: reorder-only with existingImages JSON
       try {
-        imageUrls = typeof reqData.existingImages === "string" 
-          ? JSON.parse(reqData.existingImages) 
+        imageUrls = typeof reqData.existingImages === "string"
+          ? JSON.parse(reqData.existingImages)
           : reqData.existingImages;
         console.log("✅ Keeping existing images:", imageUrls.length);
       } catch (err) {
-        console.log("⚠️ Failed to parse existingImages, keeping current images");
+        console.log("⚠️ Failed to parse existingImages, keeping current");
       }
     }
-    // Otherwise keep the existing product images (no change)
+
 
     // ✅ Category handling
     let categoryId = product.category; // Keep original category by default

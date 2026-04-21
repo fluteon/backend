@@ -46,9 +46,8 @@ const UpdateProductForm = () => {
         .catch(err => console.error("Failed to load categories", err));
     });
   }, []);
-  const [images, setImages] = useState([]);
-  const [previewImages, setPreviewImages] = useState([]);
-  const [imageIds, setImageIds] = useState([]); // Stable IDs for drag-drop
+  // Unified image state: [{id, type:'existing'|'new', url?, file?, blobUrl?}]
+  const [imageItems, setImageItems] = useState([]);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -123,9 +122,11 @@ const UpdateProductForm = () => {
       });
 
       if (product.imageUrl?.length > 0) {
-        setPreviewImages(product.imageUrl);
-        // Generate stable IDs for existing images based on URL
-        setImageIds(product.imageUrl.map((url, idx) => `img-${url.substring(url.lastIndexOf('/') + 1)}-${idx}`));
+        setImageItems(product.imageUrl.map((url, idx) => ({
+          id: `existing-${idx}-${url.substring(url.lastIndexOf('/') + 1).substring(0, 20)}`,
+          type: 'existing',
+          url,
+        })));
       }
       // Pre-populate size chart preview if product has one
       if (product.sizeChartUrl) {
@@ -158,65 +159,36 @@ const UpdateProductForm = () => {
   }
 
   const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files).slice(0, 10);
-    console.log("📸 Images selected:", files.length, "files");
-
-    const newImages = [...images, ...files].slice(0, 10);
-    setImages(newImages);
-
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
-    const allPreviews = [...previewImages, ...newPreviews].slice(0, 10);
-    setPreviewImages(allPreviews);
-
-    // Generate stable IDs for new images
-    const newIds = files.map((file, idx) => `new-${file.name}-${Date.now()}-${idx}`);
-    const allIds = [...imageIds, ...newIds].slice(0, 10);
-    setImageIds(allIds);
+    const files = Array.from(e.target.files);
+    console.log("📸 Images selected:", files.length);
+    const newItems = files.map((file, idx) => ({
+      id: `new-${Date.now()}-${idx}-${file.name}`,
+      type: 'new',
+      file,
+      blobUrl: URL.createObjectURL(file),
+    }));
+    setImageItems(prev => [...prev, ...newItems].slice(0, 10));
   };
 
   const handleRemoveImage = (indexToRemove) => {
-    // Don't allow removing images during form submission
     if (loading) return;
-
-    const newImages = images.filter((_, index) => index !== indexToRemove);
-    const newPreviews = previewImages.filter((_, index) => index !== indexToRemove);
-    const newIds = imageIds.filter((_, index) => index !== indexToRemove);
-
-    setImages(newImages);
-    setPreviewImages(newPreviews);
-    setImageIds(newIds);
-
-    console.log("🗑️ Image removed. Remaining:", newImages.length);
+    setImageItems(prev => {
+      const next = prev.filter((_, i) => i !== indexToRemove);
+      console.log("🗑️ Image removed. Remaining:", next.length);
+      return next;
+    });
   };
 
   const handleDragEnd = (result) => {
     if (!result.destination || loading) return;
-
-    const sourceIndex = result.source.index;
-    const destinationIndex = result.destination.index;
-
-    if (sourceIndex === destinationIndex) return;
-
-    // Always reorder the preview URLs (these represent all visible images)
-    const reorderedPreviews = Array.from(previewImages);
-    const [movedPreview] = reorderedPreviews.splice(sourceIndex, 1);
-    reorderedPreviews.splice(destinationIndex, 0, movedPreview);
-    setPreviewImages(reorderedPreviews);
-
-    // Always reorder the stable drag-drop IDs
-    const reorderedIds = Array.from(imageIds);
-    const [movedId] = reorderedIds.splice(sourceIndex, 1);
-    reorderedIds.splice(destinationIndex, 0, movedId);
-    setImageIds(reorderedIds);
-
-    // Only reorder File objects if there are any (new uploads)
-    // When editing with existing images only, `images` is [] and must stay []
-    if (images.length > 0) {
-      const reorderedFiles = Array.from(images);
-      const [movedFile] = reorderedFiles.splice(sourceIndex, 1);
-      reorderedFiles.splice(destinationIndex, 0, movedFile);
-      setImages(reorderedFiles);
-    }
+    const { source, destination } = result;
+    if (source.index === destination.index) return;
+    setImageItems(prev => {
+      const next = Array.from(prev);
+      const [moved] = next.splice(source.index, 1);
+      next.splice(destination.index, 0, moved);
+      return next;
+    });
   };
 
   const handleChange = (e) => {
@@ -278,16 +250,15 @@ const UpdateProductForm = () => {
     const formData = new FormData();
 
     // Validate: need at least 4 images
-    const totalImages = images.length > 0 ? images.length : previewImages.length;
-    if (totalImages === 0) {
+    if (imageItems.length === 0) {
       setError(true);
       setErrorMessage("Please select at least 4 product images");
       setLoading(false);
       return;
     }
-    if (totalImages < 4) {
+    if (imageItems.length < 4) {
       setError(true);
-      setErrorMessage(`Please add at least 4 product images. Currently: ${totalImages} image(s)`);
+      setErrorMessage(`Please add at least 4 product images. Currently: ${imageItems.length}`);
       setLoading(false);
       return;
     }
@@ -310,15 +281,21 @@ const UpdateProductForm = () => {
       }
     }
 
-    // Handle images:
-    // Case A: New files were uploaded (images[] contains File objects) → upload to Cloudinary
-    // Case B: No new files (drag-reorder only) → send the reordered existing URLs
-    if (images.length > 0) {
-      images.forEach((image) => formData.append("images", image));
-    } else {
-      // This covers both: no changes AND drag-reorder of existing images
-      formData.append("existingImages", JSON.stringify(previewImages));
-    }
+    // Build imageOrder manifest: Cloudinary URL for existing, '__NEW__N' for new files
+    const newFiles = imageItems
+      .filter(item => item.type === 'new')
+      .map(item => item.file);
+
+    const imageOrder = imageItems.map(item => {
+      if (item.type === 'existing') return item.url;
+      const idx = newFiles.indexOf(item.file);
+      return `__NEW__${idx}`;
+    });
+
+    formData.append('imageOrder', JSON.stringify(imageOrder));
+    newFiles.forEach(file => formData.append('images', file));
+    console.log('📦 imageOrder:', imageOrder);
+    console.log('📦 new files:', newFiles.length);
 
     // Handle size chart image
     if (sizeChartFile) {
@@ -331,8 +308,7 @@ const UpdateProductForm = () => {
 
     // Debug: log what's being sent
     console.log("📤 Submitting update...");
-    console.log("  images (File objects):", images.length);
-    console.log("  previewImages (URLs):", previewImages.length);
+    console.log("  imageItems total:", imageItems.length);
     console.log("  productId:", productData._id);
     for (const [key, value] of formData.entries()) {
       console.log(`  FormData: ${key} =`, value instanceof File ? `File(${value.name})` : (typeof value === 'string' && value.length > 100 ? value.substring(0, 100) + '...' : value));
@@ -487,23 +463,23 @@ const UpdateProductForm = () => {
                       gap: 2,
                       mt: 2,
                       flexWrap: "wrap",
-                      minHeight: previewImages.length === 0 ? '120px' : 'auto',
-                      border: previewImages.length === 0 ? '2px dashed #ccc' : 'none',
+                      minHeight: imageItems.length === 0 ? '120px' : 'auto',
+                      border: imageItems.length === 0 ? '2px dashed #ccc' : 'none',
                       borderRadius: 1,
                       padding: 2,
                       alignItems: 'center',
-                      justifyContent: previewImages.length === 0 ? 'center' : 'flex-start'
+                      justifyContent: imageItems.length === 0 ? 'center' : 'flex-start'
                     }}
                   >
-                    {previewImages.length === 0 ? (
+                    {imageItems.length === 0 ? (
                       <Typography variant="body2" color="text.secondary">
                         No images uploaded yet
                       </Typography>
                     ) : (
-                      previewImages.map((img, index) => (
+                      imageItems.map((item, index) => (
                         <Draggable
-                          key={imageIds[index] || `image-${index}`}
-                          draggableId={imageIds[index] || `image-${index}`}
+                          key={item.id}
+                          draggableId={item.id}
                           index={index}
                           isDragDisabled={loading}
                         >
@@ -597,7 +573,7 @@ const UpdateProductForm = () => {
                               )}
 
                               <img
-                                src={img}
+                                src={item.type === 'existing' ? item.url : item.blobUrl}
                                 alt={`preview ${index + 1}`}
                                 width="120"
                                 height="120"

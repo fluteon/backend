@@ -570,8 +570,8 @@ const productToUpdate = location.state?.product;
         .catch(err => console.error("Failed to load categories", err));
     });
   }, []);
-  const [images, setImages] = useState([]);
-  const [previewImages, setPreviewImages] = useState([]);
+  // Unified image state: [{id, type:'existing'|'new', url?, file?, blobUrl?}]
+  const [imageItems, setImageItems] = useState([]);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -639,7 +639,13 @@ function findCategoryPath(value) {
       sizeChartUrl,
     } = productToUpdate;
 
-    const categoryPath = findCategoryPath(productToUpdate.thirdLavelCategory || "formal_pants");
+    // The product stores category as a populated object (category.name = DB identifier like 'blazer_sets')
+    // productToUpdate.thirdLavelCategory doesn't exist as a flat field on the product
+    const thirdCatName = productToUpdate.category?.name || productToUpdate.thirdLavelCategory;
+    const categoryPath = thirdCatName
+      ? findCategoryPath(thirdCatName)
+      : { topLavelCategory: "", secondLavelCategory: "", thirdLavelCategory: "" };
+    console.log("📍 Product category name:", thirdCatName, "→ path:", categoryPath);
 
  setProductData((prev) => ({
   ...prev,
@@ -658,7 +664,11 @@ function findCategoryPath(value) {
 
 
     if (imageUrl?.length > 0) {
-      setPreviewImages(imageUrl);
+      setImageItems(imageUrl.map((url, idx) => ({
+        id: `existing-${idx}-${url.substring(url.lastIndexOf('/') + 1).substring(0, 20)}`,
+        type: 'existing',
+        url,
+      })));
     }
     if (sizeChartUrl) {
       setSizeChartPreview(sizeChartUrl);
@@ -676,53 +686,36 @@ function findCategoryPath(value) {
   const jwt = sessionStorage.getItem("jwt");
 
   const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files).slice(0, 10);
-    console.log("📸 Images selected:", files.length, "files");
-    console.log("File details:", files.map(f => ({ name: f.name, size: f.size, type: f.type })));
-    
-    // Append new images to existing ones (up to 10 total)
-    const newImages = [...images, ...files].slice(0, 10);
-    setImages(newImages);
-
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
-    const allPreviews = [...previewImages, ...newPreviews].slice(0, 10);
-    setPreviewImages(allPreviews);
+    const files = Array.from(e.target.files);
+    console.log("📸 Images selected:", files.length);
+    const newItems = files.map((file, idx) => ({
+      id: `new-${Date.now()}-${idx}-${file.name}`,
+      type: 'new',
+      file,
+      blobUrl: URL.createObjectURL(file),
+    }));
+    setImageItems(prev => [...prev, ...newItems].slice(0, 10));
   };
 
   const handleRemoveImage = (indexToRemove) => {
-    const newImages = images.filter((_, index) => index !== indexToRemove);
-    const newPreviews = previewImages.filter((_, index) => index !== indexToRemove);
-    
-    setImages(newImages);
-    setPreviewImages(newPreviews);
-    
-    console.log("🗑️ Image removed. Remaining:", newImages.length);
+    setImageItems(prev => {
+      const next = prev.filter((_, i) => i !== indexToRemove);
+      console.log("🗑️ Image removed. Remaining:", next.length);
+      return next;
+    });
   };
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
-
-    const sourceIndex = result.source.index;
-    const destinationIndex = result.destination.index;
-
-    if (sourceIndex === destinationIndex) return;
-
-    // Only reorder File objects if there are any (new uploads)
-    // When editing with existing images only, `images` is [] and must stay []
-    if (images.length > 0) {
-      const reorderedImages = Array.from(images);
-      const [movedImage] = reorderedImages.splice(sourceIndex, 1);
-      reorderedImages.splice(destinationIndex, 0, movedImage);
-      setImages(reorderedImages);
-    }
-
-    // Always reorder previews
-    const reorderedPreviews = Array.from(previewImages);
-    const [movedPreview] = reorderedPreviews.splice(sourceIndex, 1);
-    reorderedPreviews.splice(destinationIndex, 0, movedPreview);
-    setPreviewImages(reorderedPreviews);
-
-    console.log("🔄 Images reordered:", sourceIndex, "→", destinationIndex);
+    const { source, destination } = result;
+    if (source.index === destination.index) return;
+    setImageItems(prev => {
+      const next = Array.from(prev);
+      const [moved] = next.splice(source.index, 1);
+      next.splice(destination.index, 0, moved);
+      console.log("🔄 Images reordered:", source.index, "→", destination.index);
+      return next;
+    });
   };
 
   // const handleChange = (e) => {
@@ -789,50 +782,27 @@ const handleSubmit = async (e) => {
   const formData = new FormData();
 
   console.log("📦 Building FormData...");
-  console.log("Images state:", images);
-  console.log("Images length:", images.length);
-  console.log("Preview images:", previewImages.length);
+  console.log("imageItems:", imageItems.length, "total");
   console.log("Is editing:", isEditing);
 
-  // Validate images: for new products, must have at least 4 images; for editing, must have either new images OR existing preview images
-  if (!isEditing && images.length === 0) {
-    console.error("⚠️ No images selected for new product!");
-    setError(true);
-    setErrorMessage("Please select at least 4 product images");
-    setLoading(false);
-    return;
+  // Validate images
+  const newFiles = imageItems.filter(item => item.type === 'new').map(item => item.file);
+  if (!isEditing && imageItems.length === 0) {
+    setError(true); setErrorMessage("Please select at least 4 product images"); setLoading(false); return;
   }
-  
-  if (!isEditing && images.length < 4) {
-    console.error("⚠️ Not enough images! Minimum 4 required, found:", images.length);
-    setError(true);
-    setErrorMessage(`Please add at least 4 product images. Currently: ${images.length} image(s)`);
-    setLoading(false);
-    return;
+  if (!isEditing && imageItems.length < 4) {
+    setError(true); setErrorMessage(`Please add at least 4 product images. Currently: ${imageItems.length}`); setLoading(false); return;
   }
-  
-  if (isEditing && images.length === 0 && previewImages.length === 0) {
-    console.error("⚠️ No images found for product update!");
-    setError(true);
-    setErrorMessage("Please select at least 4 product images");
-    setLoading(false);
-    return;
+  if (isEditing && imageItems.length === 0) {
+    setError(true); setErrorMessage("Please select at least 4 product images"); setLoading(false); return;
   }
-  
-  if (isEditing && images.length === 0 && previewImages.length < 4) {
-    console.error("⚠️ Not enough images! Minimum 4 required, found:", previewImages.length);
-    setError(true);
-    setErrorMessage(`Please add at least 4 product images. Currently: ${previewImages.length} image(s)`);
-    setLoading(false);
-    return;
+  if (isEditing && imageItems.length < 4) {
+    setError(true); setErrorMessage(`Please add at least 4 product images. Currently: ${imageItems.length}`); setLoading(false); return;
   }
 
-  // Add product data fields (skip 'images' field to avoid conflict)
+  // Add product data fields (skip 'images' field)
   for (let key in productData) {
-    if (key === "images") {
-      console.log("⏭️ Skipping productData.images field (will add File objects separately)");
-      continue; // Skip the images field - we'll add actual files below
-    }
+    if (key === "images") continue;
     if (key === "size") {
       formData.append("size", JSON.stringify(productData.size));
     } else {
@@ -840,22 +810,16 @@ const handleSubmit = async (e) => {
     }
   }
 
-  // Add actual image File objects (only if new images were selected)
-  if (images.length > 0) {
-    images.forEach((image, index) => {
-      if (image && image.name) {
-        console.log(`Adding image ${index + 1}:`, image.name, image.size, "bytes");
-        formData.append("images", image);
-      } else {
-        console.warn(`⚠️ Skipped invalid image entry at index ${index}:`, image);
-      }
-    });
-    console.log("✅ FormData ready with new images");
-  } else if (isEditing) {
-    // When editing without new images, send existing image URLs to preserve them
-    console.log("✅ No new images - keeping existing images:", previewImages.length);
-    formData.append("existingImages", JSON.stringify(previewImages));
-  }
+  // Build imageOrder manifest: URL for existing items, '__NEW__N' placeholder for new files
+  const imageOrder = imageItems.map(item => {
+    if (item.type === 'existing') return item.url;
+    const idx = newFiles.indexOf(item.file);
+    return `__NEW__${idx}`;
+  });
+  formData.append('imageOrder', JSON.stringify(imageOrder));
+  newFiles.forEach(file => formData.append('images', file));
+  console.log('📦 imageOrder:', imageOrder);
+  console.log('📦 new files:', newFiles.length);
 
   // Handle size chart
   if (sizeChartFile) {
@@ -906,8 +870,7 @@ const handleSubmit = async (e) => {
           thirdLavelCategory: "",
           description: "",
         });
-        setImages([]);
-        setPreviewImages([]);
+        setImageItems([]);
         setSizeChartFile(null);
         setSizeChartPreview(null);
         setRemoveSizeChart(false);
@@ -1049,21 +1012,25 @@ useEffect(() => {
                       gap: 2, 
                       mt: 2, 
                       flexWrap: "wrap",
-                      minHeight: previewImages.length === 0 ? '120px' : 'auto',
-                      border: previewImages.length === 0 ? '2px dashed #ccc' : 'none',
+                      minHeight: imageItems.length === 0 ? '120px' : 'auto',
+                      border: imageItems.length === 0 ? '2px dashed #ccc' : 'none',
                       borderRadius: 1,
                       padding: 2,
                       alignItems: 'center',
-                      justifyContent: previewImages.length === 0 ? 'center' : 'flex-start'
+                      justifyContent: imageItems.length === 0 ? 'center' : 'flex-start'
                     }}
                   >
-                    {previewImages.length === 0 ? (
+                    {imageItems.length === 0 ? (
                       <Typography variant="body2" color="text.secondary">
-                        No images uploaded yet
+                        No images yet. Upload at least 4.
                       </Typography>
                     ) : (
-                      previewImages.map((img, index) => (
-                        <Draggable key={`image-${index}`} draggableId={`image-${index}`} index={index}>
+                      imageItems.map((item, index) => (
+                        <Draggable
+                          key={item.id}
+                          draggableId={item.id}
+                          index={index}
+                        >
                           {(provided, snapshot) => (
                             <Box
                               ref={provided.innerRef}
@@ -1145,7 +1112,7 @@ useEffect(() => {
 
                               {/* Image */}
                               <img
-                                src={img}
+                                src={item.type === 'existing' ? item.url : item.blobUrl}
                                 alt={`preview ${index + 1}`}
                                 width="120"
                                 height="120"
