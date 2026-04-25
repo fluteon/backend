@@ -108,6 +108,10 @@ const orderSchema = new Schema({
     type: Number,
     default: 0,
   },
+  onlineDiscount: {
+    type: Number,
+    default: 0,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

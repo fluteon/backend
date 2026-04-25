@@ -773,6 +773,15 @@ function findCategoryPath(value) {
     }));
   };
 
+  const handleRemoveSize = (index) => {
+    const sizes = [...productData.size];
+    sizes.splice(index, 1);
+    setProductData((prevState) => ({
+      ...prevState,
+      size: sizes,
+    }));
+  };
+
 const handleSubmit = async (e) => {
   e.preventDefault();
   setLoading(true);
@@ -1287,8 +1296,8 @@ useEffect(() => {
 {productData.size.length > 0 ? (
   <>
     {productData.size.map((size, index) => (
-      <Grid container item spacing={3} key={index}>
-        <Grid item xs={12} sm={6}>
+      <Grid container item spacing={3} key={index} alignItems="center">
+        <Grid item xs={12} sm={!sizeChart ? 5 : 6}>
           <TextField
             label="Size Name"
             name="name"
@@ -1298,7 +1307,7 @@ useEffect(() => {
             fullWidth
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={!sizeChart ? 10 : 12} sm={!sizeChart ? 5 : 6}>
           <TextField
             label="Quantity"
             name="size_quantity"
@@ -1309,6 +1318,13 @@ useEffect(() => {
             fullWidth
           />
         </Grid>
+        {!sizeChart && (
+          <Grid item xs={2} sm={2} sx={{ display: 'flex', justifyContent: 'center' }}>
+            <IconButton onClick={() => handleRemoveSize(index)} color="error" title="Remove Size">
+              <CloseIcon />
+            </IconButton>
+          </Grid>
+        )}
       </Grid>
     ))}
     {!sizeChart && (

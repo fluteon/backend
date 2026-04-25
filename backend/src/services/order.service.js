@@ -224,6 +224,28 @@ async function placedOrder(orderId, paymentMeta = {}) {
     }
   }
 
+  // Send WhatsApp to customer if available
+  const phone = order.isGuestOrder ? order.guestInfo?.phone : updatedOrder?.shippingAddress?.mobile;
+  if (phone) {
+    const phone10 = phone.replace(/^\+?91/, "").trim();
+    if (phone10.length === 10) {
+      const { sendWhatsAppOrderConfirmation } = require("../services/whatsapp.service.js");
+      const frontendUrl = process.env.FRONTEND_URL || "https://www.fluteon.com";
+      const trackUrl = `${frontendUrl}/track-order?id=${updatedOrder._id}`;
+      const notifInfo = {
+          name: order.isGuestOrder ? order.guestInfo?.name : (updatedOrder?.shippingAddress?.firstName + " " + updatedOrder?.shippingAddress?.lastName),
+          orderId: String(updatedOrder._id),
+          amount: updatedOrder.totalDiscountedPrice,
+          trackUrl,
+          items: updatedOrder.orderItems || [],
+          shippingAddress: updatedOrder.shippingAddress || {},
+      };
+      sendWhatsAppOrderConfirmation(phone10, notifInfo).catch(e => 
+          console.error("Customer WhatsApp alert failed:", e.message)
+      );
+    }
+  }
+
   // Notify owner via WhatsApp (non-blocking)
   notifyOwnerNewOrder(updatedOrder).catch((e) =>
     console.error("Owner order alert failed:", e.message)
@@ -445,12 +467,8 @@ const usersOrderHistory = async (userId) => {
 async function getAllOrders(page = 1, pageSize = 10, status = "", sort = "Newest") {
   const skip = (page - 1) * pageSize;
 
-  // Show paid orders + all guest orders (including COD where payment is pending)
   const filter = {
-    $or: [
-      { "paymentDetails.paymentStatus": "COMPLETED" },
-      { isGuestOrder: true },
-    ],
+    orderStatus: { $ne: "PENDING" },
   };
   if (status) filter.orderStatus = status;
 
@@ -495,7 +513,7 @@ async function getAdminDashboardOverview() {
     .select("firstName lastName email createdAt"); // Select only required fields
 
 
-  const recentOrders = await Order.find()
+  const recentOrders = await Order.find({ orderStatus: { $ne: "PENDING" } })
     .sort({ createdAt: -1 })
     .limit(10)
     .populate("orderItems.product", "title imageUrl brand") // adjust fields based on your schema

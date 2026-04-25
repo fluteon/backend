@@ -92,36 +92,6 @@ const createGuestOrder = async (req, res) => {
         const populated = await Order.findById(savedOrder._id)
             .populate({ path: "orderItems", populate: { path: "product" } });
 
-        // ── Fire notifications (non-blocking) ──────────────────────────────
-        const phone10 = (guestInfo.phone || "").replace(/^\+?91/, "").trim();
-        const frontendUrl = process.env.FRONTEND_URL || "https://www.fluteon.com";
-        const trackUrl = `${frontendUrl}/track-order?id=${savedOrder._id}`;
-
-        const notifInfo = {
-            name: guestInfo.name,
-            orderId: String(savedOrder._id),
-            amount: totalDiscountedPrice,
-            trackUrl,
-            items: populated?.orderItems || [],
-            shippingAddress,
-        };
-
-        Promise.allSettled([
-            phone10.length === 10
-                ? sendWhatsAppOrderConfirmation(phone10, notifInfo)
-                : Promise.resolve(),
-            sendOrderConfirmationEmail(guestInfo.email, notifInfo),
-            notifyOwnerNewOrder(populated),
-        ]).then(results => {
-            const labels = ["WhatsApp", "Email", "Owner Alert"];
-            results.forEach((r, i) => {
-                if (r.status === "rejected") {
-                    console.error(`❌ Notification ${labels[i]} failed:`, r.reason);
-                }
-            });
-        });
-        // ─────────────────────────────────────────────────
-
         return res.status(201).json(populated);
     } catch (error) {
         console.error("❌ Guest order creation error:", error.message);

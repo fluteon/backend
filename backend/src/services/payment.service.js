@@ -16,10 +16,12 @@ const createPaymentLink = async (orderId, usedSuperCoins = 0, couponDiscount = 0
 
     // 🔢 Calculate final amount
     const basePrice = order.totalDiscountedPrice || 0;
-    const finalAmount = Math.max(basePrice - (usedSuperCoins / 100) - couponDiscount, 0);
+    const onlineDiscount = 50; // Flat ₹50 off for online payments
+    const finalAmount = Math.max(basePrice - (usedSuperCoins / 100) - couponDiscount - onlineDiscount, 0);
 
     order.usedSuperCoins = usedSuperCoins;
     order.couponDiscount = couponDiscount;
+    order.onlineDiscount = onlineDiscount;
     await order.save();
 
     // 👤 Determine customer info (user or guest)
